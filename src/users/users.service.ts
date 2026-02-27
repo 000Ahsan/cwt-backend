@@ -25,9 +25,22 @@ export class UsersService {
         });
     }
 
+    async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
+        if (data.passwordHash && typeof data.passwordHash === 'string') {
+            data.passwordHash = await bcrypt.hash(data.passwordHash, 10);
+        }
+        return this.prisma.user.update({
+            where: { id },
+            data,
+        });
+    }
+
     async findWorkersByContractor(contractorId: string): Promise<User[]> {
         return this.prisma.user.findMany({
-            where: { contractorId },
+            where: {
+                contractorId,
+                role: 'WORKER'
+            },
         });
     }
 }
