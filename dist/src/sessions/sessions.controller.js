@@ -19,13 +19,15 @@ const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const client_1 = require("@prisma/client");
+const swagger_1 = require("@nestjs/swagger");
+const start_session_dto_1 = require("./dto/start-session.dto");
 let SessionsController = class SessionsController {
     sessionsService;
     constructor(sessionsService) {
         this.sessionsService = sessionsService;
     }
-    async start(req, projectId) {
-        return this.sessionsService.startSession(req.user.userId, projectId);
+    async start(req, body) {
+        return this.sessionsService.startSession(req.user.userId, body.projectId);
     }
     async end(req) {
         return this.sessionsService.endSession(req.user.userId);
@@ -38,15 +40,17 @@ exports.SessionsController = SessionsController;
 __decorate([
     (0, common_1.Post)('start'),
     (0, roles_decorator_1.Roles)(client_1.Role.WORKER),
+    (0, swagger_1.ApiOperation)({ summary: 'Start a work session for a project' }),
     __param(0, (0, common_1.Request)()),
-    __param(1, (0, common_1.Body)('projectId')),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:paramtypes", [Object, start_session_dto_1.StartSessionDto]),
     __metadata("design:returntype", Promise)
 ], SessionsController.prototype, "start", null);
 __decorate([
     (0, common_1.Post)('end'),
     (0, roles_decorator_1.Roles)(client_1.Role.WORKER),
+    (0, swagger_1.ApiOperation)({ summary: 'End the current work session' }),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -55,12 +59,15 @@ __decorate([
 __decorate([
     (0, common_1.Get)('my-history'),
     (0, roles_decorator_1.Roles)(client_1.Role.WORKER),
+    (0, swagger_1.ApiOperation)({ summary: 'Get work history for the logged-in worker' }),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], SessionsController.prototype, "history", null);
 exports.SessionsController = SessionsController = __decorate([
+    (0, swagger_1.ApiTags)('Sessions'),
+    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('sessions'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [sessions_service_1.SessionsService])

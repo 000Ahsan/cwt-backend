@@ -9,7 +9,11 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { CreateWorkLogDto } from './dto/create-work-log.dto';
 
+@ApiTags('Work Logs')
+@ApiBearerAuth()
 @Controller('work-logs')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class WorkLogsController {
@@ -17,6 +21,8 @@ export class WorkLogsController {
 
     @Post()
     @Roles(Role.WORKER)
+    @ApiConsumes('multipart/form-data')
+    @ApiOperation({ summary: 'Submit a work log with photos' })
     @UseInterceptors(FilesInterceptor('photos', 5, {
         storage: diskStorage({
             destination: (req, file, cb) => {
@@ -43,7 +49,7 @@ export class WorkLogsController {
         },
         limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
     }))
-    async create(@Request() req, @Body() body: any, @UploadedFiles() files: Express.Multer.File[]) {
+    async create(@Request() req, @Body() body: CreateWorkLogDto, @UploadedFiles() files: Express.Multer.File[]) {
         return this.workLogsService.createLog(req.user.userId, {
             sessionId: body.sessionId,
             description: body.description,

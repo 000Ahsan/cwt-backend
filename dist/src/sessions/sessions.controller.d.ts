@@ -1,8 +1,9 @@
 import { SessionsService } from './sessions.service';
+import { StartSessionDto } from './dto/start-session.dto';
 export declare class SessionsController {
     private sessionsService;
     constructor(sessionsService: SessionsService);
-    start(req: any, projectId: string): Promise<{
+    start(req: any, body: StartSessionDto): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;

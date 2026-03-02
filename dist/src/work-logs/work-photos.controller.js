@@ -52,6 +52,7 @@ const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const client_1 = require("@prisma/client");
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
+const swagger_1 = require("@nestjs/swagger");
 let WorkPhotosController = class WorkPhotosController {
     prisma;
     constructor(prisma) {
@@ -94,6 +95,7 @@ let WorkPhotosController = class WorkPhotosController {
 exports.WorkPhotosController = WorkPhotosController;
 __decorate([
     (0, common_1.Get)(':year/:month/:filename'),
+    (0, swagger_1.ApiOperation)({ summary: 'View/Download a work photo (authorized access only)' }),
     __param(0, (0, common_1.Param)('year')),
     __param(1, (0, common_1.Param)('month')),
     __param(2, (0, common_1.Param)('filename')),
@@ -104,6 +106,8 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], WorkPhotosController.prototype, "getPhoto", null);
 exports.WorkPhotosController = WorkPhotosController = __decorate([
+    (0, swagger_1.ApiTags)('Work Photos'),
+    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('uploads/work-photos'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService])

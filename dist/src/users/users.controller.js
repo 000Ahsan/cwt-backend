@@ -19,6 +19,9 @@ const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const client_1 = require("@prisma/client");
+const swagger_1 = require("@nestjs/swagger");
+const create_worker_dto_1 = require("./dto/create-worker.dto");
+const update_worker_dto_1 = require("./dto/update-worker.dto");
 let UsersController = class UsersController {
     usersService;
     constructor(usersService) {
@@ -27,21 +30,54 @@ let UsersController = class UsersController {
     async findAllWorkers(req) {
         return this.usersService.findWorkersByContractor(req.user.userId);
     }
-    async createWorker(req, data) {
+    async createWorker(req, body) {
+        const { password, ...userData } = body;
         return this.usersService.create({
-            ...data,
+            ...userData,
+            passwordHash: password,
             role: client_1.Role.WORKER,
             contractor: { connect: { id: req.user.userId } }
         });
     }
-    async updateWorker(id, data) {
-        return this.usersService.update(id, data);
+    async updateWorkerByEmail(body, req) {
+        const { password, ...userData } = body;
+        if (!body.email) {
+            throw new common_1.ForbiddenException('Email is required to update worker');
+        }
+        const worker = await this.usersService.findOneByEmail(body.email);
+        if (!worker) {
+            throw new common_1.NotFoundException('Worker not found');
+        }
+        if (worker.contractorId !== req.user.userId) {
+            throw new common_1.ForbiddenException('You can only edit your own workers');
+        }
+        const updateData = { ...userData };
+        if (password) {
+            updateData.passwordHash = password;
+        }
+        return this.usersService.update(worker.id, updateData);
+    }
+    async updateWorker(id, body, req) {
+        const { password, ...userData } = body;
+        const worker = await this.usersService.findOneById(id);
+        if (!worker) {
+            throw new common_1.NotFoundException('Worker not found');
+        }
+        if (worker.contractorId !== req.user.userId) {
+            throw new common_1.ForbiddenException('You can only edit your own workers');
+        }
+        const updateData = { ...userData };
+        if (password) {
+            updateData.passwordHash = password;
+        }
+        return this.usersService.update(id, updateData);
     }
 };
 exports.UsersController = UsersController;
 __decorate([
     (0, common_1.Get)('workers'),
     (0, roles_decorator_1.Roles)(client_1.Role.CONTRACTOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all workers belonging to the contractor' }),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -50,22 +86,37 @@ __decorate([
 __decorate([
     (0, common_1.Post)('workers'),
     (0, roles_decorator_1.Roles)(client_1.Role.CONTRACTOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a new worker under the contractor' }),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, create_worker_dto_1.CreateWorkerDto]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "createWorker", null);
 __decorate([
+    (0, common_1.Put)('workers'),
+    (0, roles_decorator_1.Roles)(client_1.Role.CONTRACTOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Update a worker details' }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [update_worker_dto_1.UpdateWorkerDto, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateWorkerByEmail", null);
+__decorate([
     (0, common_1.Put)('workers/:id'),
     (0, roles_decorator_1.Roles)(client_1.Role.CONTRACTOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Update a worker details by ID' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, update_worker_dto_1.UpdateWorkerDto, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateWorker", null);
 exports.UsersController = UsersController = __decorate([
+    (0, swagger_1.ApiTags)('Users'),
+    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('users'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [users_service_1.UsersService])

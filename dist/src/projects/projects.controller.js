@@ -19,6 +19,9 @@ const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const client_1 = require("@prisma/client");
+const swagger_1 = require("@nestjs/swagger");
+const create_project_dto_1 = require("./dto/create-project.dto");
+const assign_worker_dto_1 = require("./dto/assign-worker.dto");
 let ProjectsController = class ProjectsController {
     projectsService;
     constructor(projectsService) {
@@ -33,22 +36,24 @@ let ProjectsController = class ProjectsController {
         }
         return [];
     }
-    async assignWorker(projectId, workerId, req) {
-        return this.projectsService.assignWorker(projectId, workerId, req.user.userId);
+    async assignWorker(projectId, body, req) {
+        return this.projectsService.assignWorker(projectId, body.workerId, req.user.userId);
     }
 };
 exports.ProjectsController = ProjectsController;
 __decorate([
     (0, common_1.Post)(),
     (0, roles_decorator_1.Roles)(client_1.Role.CONTRACTOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a new project' }),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, create_project_dto_1.CreateProjectDto]),
     __metadata("design:returntype", Promise)
 ], ProjectsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all projects (Contractors see theirs, Workers see assigned)' }),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -57,14 +62,17 @@ __decorate([
 __decorate([
     (0, common_1.Post)(':id/assign-worker'),
     (0, roles_decorator_1.Roles)(client_1.Role.CONTRACTOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Assign a worker to a project' }),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)('workerId')),
+    __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:paramtypes", [String, assign_worker_dto_1.AssignWorkerDto, Object]),
     __metadata("design:returntype", Promise)
 ], ProjectsController.prototype, "assignWorker", null);
 exports.ProjectsController = ProjectsController = __decorate([
+    (0, swagger_1.ApiTags)('Projects'),
+    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('projects'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [projects_service_1.ProjectsService])

@@ -81,6 +81,13 @@ let UsersService = class UsersService {
                 contractorId,
                 role: 'WORKER'
             },
+            include: {
+                assignments: {
+                    include: {
+                        project: true
+                    }
+                }
+            }
         });
     }
 };

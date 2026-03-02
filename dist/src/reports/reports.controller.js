@@ -19,6 +19,7 @@ const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const client_1 = require("@prisma/client");
+const swagger_1 = require("@nestjs/swagger");
 let ReportsController = class ReportsController {
     reportsService;
     constructor(reportsService) {
@@ -36,6 +37,8 @@ let ReportsController = class ReportsController {
 exports.ReportsController = ReportsController;
 __decorate([
     (0, common_1.Get)('daily'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get daily report for the contractor' }),
+    (0, swagger_1.ApiQuery)({ name: 'date', required: false, type: String, example: '2024-03-20' }),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Query)('date')),
     __metadata("design:type", Function),
@@ -44,6 +47,8 @@ __decorate([
 ], ReportsController.prototype, "getDaily", null);
 __decorate([
     (0, common_1.Get)('weekly'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get weekly report for the contractor' }),
+    (0, swagger_1.ApiQuery)({ name: 'startDate', required: false, type: String, example: '2024-03-18' }),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Query)('startDate')),
     __metadata("design:type", Function),
@@ -51,6 +56,8 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ReportsController.prototype, "getWeekly", null);
 exports.ReportsController = ReportsController = __decorate([
+    (0, swagger_1.ApiTags)('Reports'),
+    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('reports'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(client_1.Role.CONTRACTOR),

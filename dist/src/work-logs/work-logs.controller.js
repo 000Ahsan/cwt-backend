@@ -57,6 +57,8 @@ const platform_express_1 = require("@nestjs/platform-express");
 const multer_1 = require("multer");
 const uuid_1 = require("uuid");
 const path = __importStar(require("path"));
+const swagger_1 = require("@nestjs/swagger");
+const create_work_log_dto_1 = require("./dto/create-work-log.dto");
 let WorkLogsController = class WorkLogsController {
     workLogsService;
     constructor(workLogsService) {
@@ -74,6 +76,8 @@ exports.WorkLogsController = WorkLogsController;
 __decorate([
     (0, common_1.Post)(),
     (0, roles_decorator_1.Roles)(client_1.Role.WORKER),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiOperation)({ summary: 'Submit a work log with photos' }),
     (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('photos', 5, {
         storage: (0, multer_1.diskStorage)({
             destination: (req, file, cb) => {
@@ -103,10 +107,12 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.UploadedFiles)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, Array]),
+    __metadata("design:paramtypes", [Object, create_work_log_dto_1.CreateWorkLogDto, Array]),
     __metadata("design:returntype", Promise)
 ], WorkLogsController.prototype, "create", null);
 exports.WorkLogsController = WorkLogsController = __decorate([
+    (0, swagger_1.ApiTags)('Work Logs'),
+    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('work-logs'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [work_logs_service_1.WorkLogsService])
