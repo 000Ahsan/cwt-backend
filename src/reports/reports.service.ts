@@ -39,4 +39,16 @@ export class ReportsService {
             orderBy: { startTime: 'asc' },
         });
     }
+
+    async getDashboardStats(contractorId: string) {
+        const [projectsCount, workersCount] = await Promise.all([
+            this.prisma.project.count({ where: { contractorId } }),
+            this.prisma.user.count({ where: { contractorId, role: 'WORKER' } }),
+        ]);
+
+        return {
+            projectsCount,
+            workersCount,
+        };
+    }
 }

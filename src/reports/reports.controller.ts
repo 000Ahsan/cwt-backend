@@ -29,4 +29,10 @@ export class ReportsController {
         const date = dateStr ? new Date(dateStr) : new Date();
         return this.reportsService.getWeeklyReport(req.user.userId, date);
     }
+
+    @Get('dashboard-stats')
+    @ApiOperation({ summary: 'Get dashboard statistics for the contractor' })
+    async getDashboardStats(@Request() req) {
+        return this.reportsService.getDashboardStats(req.user.userId);
+    }
 }

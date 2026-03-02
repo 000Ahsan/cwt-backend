@@ -21,6 +21,7 @@ const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const client_1 = require("@prisma/client");
 const swagger_1 = require("@nestjs/swagger");
 const create_project_dto_1 = require("./dto/create-project.dto");
+const update_project_dto_1 = require("./dto/update-project.dto");
 const assign_worker_dto_1 = require("./dto/assign-worker.dto");
 let ProjectsController = class ProjectsController {
     projectsService;
@@ -34,7 +35,16 @@ let ProjectsController = class ProjectsController {
         if (req.user.role === client_1.Role.CONTRACTOR) {
             return this.projectsService.findAll(req.user.userId);
         }
+        if (req.user.role === client_1.Role.WORKER) {
+            return this.projectsService.findAssignedProjects(req.user.userId);
+        }
         return [];
+    }
+    async update(id, body, req) {
+        return this.projectsService.update(id, req.user.userId, body);
+    }
+    async remove(id, req) {
+        return this.projectsService.remove(id, req.user.userId);
     }
     async assignWorker(projectId, body, req) {
         return this.projectsService.assignWorker(projectId, body.workerId, req.user.userId);
@@ -59,6 +69,27 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], ProjectsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Put)(':id'),
+    (0, roles_decorator_1.Roles)(client_1.Role.CONTRACTOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Update an existing project' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_project_dto_1.UpdateProjectDto, Object]),
+    __metadata("design:returntype", Promise)
+], ProjectsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, roles_decorator_1.Roles)(client_1.Role.CONTRACTOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete a project' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], ProjectsController.prototype, "remove", null);
 __decorate([
     (0, common_1.Post)(':id/assign-worker'),
     (0, roles_decorator_1.Roles)(client_1.Role.CONTRACTOR),

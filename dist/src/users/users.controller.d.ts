@@ -5,43 +5,43 @@ export declare class UsersController {
     private usersService;
     constructor(usersService: UsersService);
     findAllWorkers(req: any): Promise<{
-        name: string;
         id: string;
         role: import("@prisma/client").$Enums.Role;
+        name: string;
         email: string;
         passwordHash: string;
-        contractorId: string | null;
         createdAt: Date;
         updatedAt: Date;
+        contractorId: string | null;
     }[]>;
     createWorker(req: any, body: CreateWorkerDto): Promise<{
-        name: string;
         id: string;
         role: import("@prisma/client").$Enums.Role;
+        name: string;
         email: string;
         passwordHash: string;
-        contractorId: string | null;
         createdAt: Date;
         updatedAt: Date;
+        contractorId: string | null;
     }>;
     updateWorkerByEmail(body: UpdateWorkerDto, req: any): Promise<{
-        name: string;
         id: string;
         role: import("@prisma/client").$Enums.Role;
+        name: string;
         email: string;
         passwordHash: string;
-        contractorId: string | null;
         createdAt: Date;
         updatedAt: Date;
+        contractorId: string | null;
     }>;
     updateWorker(id: string, body: UpdateWorkerDto, req: any): Promise<{
-        name: string;
         id: string;
         role: import("@prisma/client").$Enums.Role;
+        name: string;
         email: string;
         passwordHash: string;
-        contractorId: string | null;
         createdAt: Date;
         updatedAt: Date;
+        contractorId: string | null;
     }>;
 }

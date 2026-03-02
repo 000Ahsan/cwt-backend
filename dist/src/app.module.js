@@ -17,12 +17,26 @@ const projects_module_1 = require("./projects/projects.module");
 const reports_module_1 = require("./reports/reports.module");
 const sessions_module_1 = require("./sessions/sessions.module");
 const work_logs_module_1 = require("./work-logs/work-logs.module");
+const serve_static_1 = require("@nestjs/serve-static");
+const path_1 = require("path");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [common_module_1.CommonModule, auth_module_1.AuthModule, users_module_1.UsersModule, projects_module_1.ProjectsModule, reports_module_1.ReportsModule, sessions_module_1.SessionsModule, work_logs_module_1.WorkLogsModule],
+        imports: [
+            serve_static_1.ServeStaticModule.forRoot({
+                rootPath: (0, path_1.join)(process.cwd(), 'uploads'),
+                serveRoot: '/uploads',
+            }),
+            common_module_1.CommonModule,
+            auth_module_1.AuthModule,
+            users_module_1.UsersModule,
+            projects_module_1.ProjectsModule,
+            reports_module_1.ReportsModule,
+            sessions_module_1.SessionsModule,
+            work_logs_module_1.WorkLogsModule,
+        ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     })

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -6,6 +6,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
 import { AssignWorkerDto } from './dto/assign-worker.dto';
 
 @ApiTags('Projects')
@@ -28,8 +29,24 @@ export class ProjectsController {
         if (req.user.role === Role.CONTRACTOR) {
             return this.projectsService.findAll(req.user.userId);
         }
-        // Workers see their assigned projects (to be implemented in session controller or here)
+        if (req.user.role === Role.WORKER) {
+            return this.projectsService.findAssignedProjects(req.user.userId);
+        }
         return [];
+    }
+
+    @Put(':id')
+    @Roles(Role.CONTRACTOR)
+    @ApiOperation({ summary: 'Update an existing project' })
+    async update(@Param('id') id: string, @Body() body: UpdateProjectDto, @Request() req) {
+        return this.projectsService.update(id, req.user.userId, body);
+    }
+
+    @Delete(':id')
+    @Roles(Role.CONTRACTOR)
+    @ApiOperation({ summary: 'Delete a project' })
+    async remove(@Param('id') id: string, @Request() req) {
+        return this.projectsService.remove(id, req.user.userId);
     }
 
     @Post(':id/assign-worker')

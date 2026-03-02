@@ -35,6 +35,11 @@ model Project {
   contractor      User              @relation("ContractorProjects", fields: [contractorId], references: [id])
   name            String
   description     String?           @db.Text
+  logo            String?
+  latitude        Float?
+  longitude       Float?
+  startDate       DateTime?
+  endDate         DateTime?
   active          Boolean           @default(true)
   assignments     ProjectAssignment[]
   workSessions    WorkSession[]
@@ -46,7 +51,7 @@ model Project {
 model ProjectAssignment {
   id              String            @id @default(uuid())
   projectId       String
-  project         Project           @relation(fields: [projectId], references: [id])
+  project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   workerId        String
   worker          User              @relation(fields: [workerId], references: [id])
   assignedAt      DateTime          @default(now())
@@ -59,7 +64,7 @@ model WorkSession {
   workerId        String
   worker          User              @relation(fields: [workerId], references: [id])
   projectId       String
-  project         Project           @relation(fields: [projectId], references: [id])
+  project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   startTime       DateTime          @default(now())
   endTime         DateTime?
   totalMinutes    Int?
@@ -73,7 +78,7 @@ model WorkSession {
 model WorkLog {
   id              String            @id @default(uuid())
   workSessionId   String
-  workSession     WorkSession       @relation(fields: [workSessionId], references: [id])
+  workSession     WorkSession       @relation(fields: [workSessionId], references: [id], onDelete: Cascade)
   description     String            @db.Text
   photos          WorkPhoto[]
   createdAt       DateTime          @default(now())
@@ -83,7 +88,7 @@ model WorkLog {
 model WorkPhoto {
   id              String            @id @default(uuid())
   workLogId       String
-  workLog         WorkLog           @relation(fields: [workLogId], references: [id])
+  workLog         WorkLog           @relation(fields: [workLogId], references: [id], onDelete: Cascade)
   filePath        String
   mimeType        String
   size            Int

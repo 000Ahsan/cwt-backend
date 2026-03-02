@@ -9,10 +9,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateProjectDto = void 0;
+exports.UpdateProjectDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
-class CreateProjectDto {
+class UpdateProjectDto {
     name;
     description;
     logo;
@@ -20,48 +20,55 @@ class CreateProjectDto {
     longitude;
     startDate;
     endDate;
+    active;
 }
-exports.CreateProjectDto = CreateProjectDto;
+exports.UpdateProjectDto = UpdateProjectDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'Main Construction Site' }),
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], CreateProjectDto.prototype, "name", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({ example: 'The primary project for testing' }),
+    (0, swagger_1.ApiPropertyOptional)({ example: 'Renamed Project' }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], CreateProjectDto.prototype, "description", void 0);
+], UpdateProjectDto.prototype, "name", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ example: 'https://example.com/logo.png' }),
+    (0, swagger_1.ApiPropertyOptional)({ example: 'Updated description' }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], CreateProjectDto.prototype, "logo", void 0);
+], UpdateProjectDto.prototype, "description", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'https://example.com/new-logo.png' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateProjectDto.prototype, "logo", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ example: 40.7128 }),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
-], CreateProjectDto.prototype, "latitude", void 0);
+], UpdateProjectDto.prototype, "latitude", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ example: -74.0060 }),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
-], CreateProjectDto.prototype, "longitude", void 0);
+], UpdateProjectDto.prototype, "longitude", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ example: '2024-03-01T00:00:00Z' }),
     (0, class_validator_1.IsISO8601)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], CreateProjectDto.prototype, "startDate", void 0);
+], UpdateProjectDto.prototype, "startDate", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ example: '2024-12-31T23:59:59Z' }),
     (0, class_validator_1.IsISO8601)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], CreateProjectDto.prototype, "endDate", void 0);
-//# sourceMappingURL=create-project.dto.js.map
+], UpdateProjectDto.prototype, "endDate", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: true }),
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], UpdateProjectDto.prototype, "active", void 0);
+//# sourceMappingURL=update-project.dto.js.map

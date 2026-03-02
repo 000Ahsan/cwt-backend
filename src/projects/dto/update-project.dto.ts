@@ -1,18 +1,18 @@
-import { IsNotEmpty, IsOptional, IsString, IsNumber, IsISO8601 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, IsNumber, IsISO8601, IsBoolean } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CreateProjectDto {
-    @ApiProperty({ example: 'Main Construction Site' })
+export class UpdateProjectDto {
+    @ApiPropertyOptional({ example: 'Renamed Project' })
     @IsString()
-    @IsNotEmpty()
-    name: string;
+    @IsOptional()
+    name?: string;
 
-    @ApiPropertyOptional({ example: 'The primary project for testing' })
+    @ApiPropertyOptional({ example: 'Updated description' })
     @IsString()
     @IsOptional()
     description?: string;
 
-    @ApiPropertyOptional({ example: 'https://example.com/logo.png' })
+    @ApiPropertyOptional({ example: 'https://example.com/new-logo.png' })
     @IsString()
     @IsOptional()
     logo?: string;
@@ -36,4 +36,9 @@ export class CreateProjectDto {
     @IsISO8601()
     @IsOptional()
     endDate?: string;
+
+    @ApiPropertyOptional({ example: true })
+    @IsBoolean()
+    @IsOptional()
+    active?: boolean;
 }

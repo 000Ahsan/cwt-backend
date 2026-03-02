@@ -33,6 +33,9 @@ let ReportsController = class ReportsController {
         const date = dateStr ? new Date(dateStr) : new Date();
         return this.reportsService.getWeeklyReport(req.user.userId, date);
     }
+    async getDashboardStats(req) {
+        return this.reportsService.getDashboardStats(req.user.userId);
+    }
 };
 exports.ReportsController = ReportsController;
 __decorate([
@@ -55,6 +58,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], ReportsController.prototype, "getWeekly", null);
+__decorate([
+    (0, common_1.Get)('dashboard-stats'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get dashboard statistics for the contractor' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ReportsController.prototype, "getDashboardStats", null);
 exports.ReportsController = ReportsController = __decorate([
     (0, swagger_1.ApiTags)('Reports'),
     (0, swagger_1.ApiBearerAuth)(),

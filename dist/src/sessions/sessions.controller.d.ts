@@ -7,8 +7,8 @@ export declare class SessionsController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        workerId: string;
         projectId: string;
+        workerId: string;
         startTime: Date;
         endTime: Date | null;
         totalMinutes: number | null;
@@ -18,8 +18,8 @@ export declare class SessionsController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        workerId: string;
         projectId: string;
+        workerId: string;
         startTime: Date;
         endTime: Date | null;
         totalMinutes: number | null;
@@ -29,8 +29,8 @@ export declare class SessionsController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        workerId: string;
         projectId: string;
+        workerId: string;
         startTime: Date;
         endTime: Date | null;
         totalMinutes: number | null;
