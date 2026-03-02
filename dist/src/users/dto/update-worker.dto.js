@@ -16,6 +16,7 @@ class UpdateWorkerDto {
     email;
     name;
     password;
+    image;
 }
 exports.UpdateWorkerDto = UpdateWorkerDto;
 __decorate([
@@ -36,4 +37,10 @@ __decorate([
     (0, class_validator_1.MinLength)(6),
     __metadata("design:type", String)
 ], UpdateWorkerDto.prototype, "password", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'data:image/png;base64,...' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateWorkerDto.prototype, "image", void 0);
 //# sourceMappingURL=update-worker.dto.js.map

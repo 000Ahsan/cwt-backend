@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsNotEmpty, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsNotEmpty, MinLength, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateWorkerDto {
@@ -16,4 +16,9 @@ export class UpdateWorkerDto {
     @IsOptional()
     @MinLength(6)
     password?: string;
+
+    @ApiPropertyOptional({ example: 'data:image/png;base64,...' })
+    @IsOptional()
+    @IsString()
+    image?: string;
 }

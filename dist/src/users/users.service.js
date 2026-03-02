@@ -45,41 +45,72 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../common/prisma/prisma.service");
+const file_service_1 = require("../common/file/file.service");
 const bcrypt = __importStar(require("bcrypt"));
 let UsersService = class UsersService {
     prisma;
-    constructor(prisma) {
+    fileService;
+    constructor(prisma, fileService) {
         this.prisma = prisma;
+        this.fileService = fileService;
     }
     async findOneByEmail(email) {
-        return this.prisma.user.findUnique({ where: { email } });
+        return this.prisma.user.findFirst({
+            where: { email, deletedAt: null }
+        });
     }
     async findOneById(id) {
-        return this.prisma.user.findUnique({ where: { id } });
+        return this.prisma.user.findFirst({
+            where: { id, deletedAt: null }
+        });
     }
     async create(data) {
-        const hashedPassword = await bcrypt.hash(data.passwordHash, 10);
+        const passwordHash = await bcrypt.hash(data.passwordHash, 10);
+        let imagePath = data.image;
+        if (data.image && data.image.startsWith('data:image')) {
+            imagePath = await this.fileService.saveBase64Image(data.image, 'users');
+        }
         return this.prisma.user.create({
             data: {
                 ...data,
-                passwordHash: hashedPassword,
+                passwordHash,
+                image: imagePath,
             },
         });
     }
     async update(id, data) {
+        const user = await this.findOneById(id);
+        const updateData = { ...data };
         if (data.passwordHash && typeof data.passwordHash === 'string') {
-            data.passwordHash = await bcrypt.hash(data.passwordHash, 10);
+            updateData.passwordHash = await bcrypt.hash(data.passwordHash, 10);
+        }
+        if (data.image && typeof data.image === 'string' && data.image.startsWith('data:image')) {
+            if (user?.image) {
+                await this.fileService.deleteFile(user.image);
+            }
+            updateData.image = await this.fileService.saveBase64Image(data.image, 'users');
         }
         return this.prisma.user.update({
             where: { id },
-            data,
+            data: updateData,
+        });
+    }
+    async softDelete(id) {
+        const user = await this.findOneById(id);
+        if (user?.image) {
+            await this.fileService.deleteFile(user.image);
+        }
+        return this.prisma.user.update({
+            where: { id },
+            data: { deletedAt: new Date(), image: null },
         });
     }
     async findWorkersByContractor(contractorId) {
         return this.prisma.user.findMany({
             where: {
                 contractorId,
-                role: 'WORKER'
+                role: 'WORKER',
+                deletedAt: null
             },
             include: {
                 assignments: {
@@ -94,6 +125,7 @@ let UsersService = class UsersService {
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        file_service_1.FileService])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

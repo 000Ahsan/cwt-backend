@@ -10,8 +10,10 @@ export declare class UsersController {
         name: string;
         email: string;
         passwordHash: string;
+        image: string | null;
         createdAt: Date;
         updatedAt: Date;
+        deletedAt: Date | null;
         contractorId: string | null;
     }[]>;
     createWorker(req: any, body: CreateWorkerDto): Promise<{
@@ -20,18 +22,10 @@ export declare class UsersController {
         name: string;
         email: string;
         passwordHash: string;
+        image: string | null;
         createdAt: Date;
         updatedAt: Date;
-        contractorId: string | null;
-    }>;
-    updateWorkerByEmail(body: UpdateWorkerDto, req: any): Promise<{
-        id: string;
-        role: import("@prisma/client").$Enums.Role;
-        name: string;
-        email: string;
-        passwordHash: string;
-        createdAt: Date;
-        updatedAt: Date;
+        deletedAt: Date | null;
         contractorId: string | null;
     }>;
     updateWorker(id: string, body: UpdateWorkerDto, req: any): Promise<{
@@ -40,8 +34,22 @@ export declare class UsersController {
         name: string;
         email: string;
         passwordHash: string;
+        image: string | null;
         createdAt: Date;
         updatedAt: Date;
+        deletedAt: Date | null;
+        contractorId: string | null;
+    }>;
+    removeWorker(id: string, req: any): Promise<{
+        id: string;
+        role: import("@prisma/client").$Enums.Role;
+        name: string;
+        email: string;
+        passwordHash: string;
+        image: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
         contractorId: string | null;
     }>;
 }

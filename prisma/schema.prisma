@@ -18,6 +18,7 @@ model User {
   name            String
   email           String            @unique
   passwordHash    String
+  image           String?
   contractorId    String?
   contractor      User?             @relation("ContractorToWorker", fields: [contractorId], references: [id])
   workers         User[]            @relation("ContractorToWorker")
@@ -26,6 +27,7 @@ model User {
   workSessions    WorkSession[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
   @@map("users")
 }
 
