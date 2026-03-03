@@ -5,9 +5,9 @@ export declare class WorkLogsController {
     private workLogsService;
     constructor(workLogsService: WorkLogsService);
     create(req: any, body: CreateWorkLogDto, files: Express.Multer.File[]): Promise<{
-        id: string;
-        createdAt: Date;
         description: string;
+        id: string;
         workSessionId: string;
+        createdAt: Date;
     }>;
 }

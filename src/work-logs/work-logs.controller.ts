@@ -23,7 +23,7 @@ export class WorkLogsController {
     @Roles(Role.WORKER)
     @ApiConsumes('multipart/form-data')
     @ApiOperation({ summary: 'Submit a work log with photos' })
-    @UseInterceptors(FilesInterceptor('photos', 5, {
+    @UseInterceptors(FilesInterceptor('photos', 10, {
         storage: diskStorage({
             destination: (req, file, cb) => {
                 const date = new Date();

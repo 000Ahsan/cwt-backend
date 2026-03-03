@@ -31,7 +31,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreateWorkLogDto.prototype, "description", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ type: 'array', items: { type: 'string', format: 'binary' }, description: 'Upload up to 5 work photos' }),
+    (0, swagger_1.ApiProperty)({ type: 'array', items: { type: 'string', format: 'binary' }, description: 'Upload up to 10 work photos' }),
     __metadata("design:type", Array)
 ], CreateWorkLogDto.prototype, "photos", void 0);
 //# sourceMappingURL=create-work-log.dto.js.map

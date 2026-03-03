@@ -78,7 +78,7 @@ __decorate([
     (0, roles_decorator_1.Roles)(client_1.Role.WORKER),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
     (0, swagger_1.ApiOperation)({ summary: 'Submit a work log with photos' }),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('photos', 5, {
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('photos', 10, {
         storage: (0, multer_1.diskStorage)({
             destination: (req, file, cb) => {
                 const date = new Date();
