@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, UseInterceptors, UploadedFiles, Get } from '@nestjs/common';
 import 'multer';
 import { WorkLogsService } from './work-logs.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -55,5 +55,12 @@ export class WorkLogsController {
             description: body.description,
             photos: files,
         });
+    }
+
+    @Get('worker')
+    @Roles(Role.WORKER)
+    @ApiOperation({ summary: 'Get work logs for the current worker' })
+    async getWorkerLogs(@Request() req) {
+        return this.workLogsService.getWorkerLogs(req.user.userId);
     }
 }

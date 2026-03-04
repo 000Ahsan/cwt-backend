@@ -26,8 +26,9 @@ export class WorkPhotosController {
         const relativePath = `./uploads/work-photos/${year}/${month}/${filename}`;
 
         // Auth Check: Does this photo belong to a project the user can access?
+        // We match by filename only to avoid Windows backslash vs forward-slash path mismatches
         const photo = await this.prisma.workPhoto.findFirst({
-            where: { filePath: relativePath },
+            where: { filePath: { contains: filename } },
             include: {
                 workLog: {
                     include: {

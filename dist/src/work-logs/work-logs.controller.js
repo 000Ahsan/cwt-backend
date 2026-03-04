@@ -71,6 +71,9 @@ let WorkLogsController = class WorkLogsController {
             photos: files,
         });
     }
+    async getWorkerLogs(req) {
+        return this.workLogsService.getWorkerLogs(req.user.userId);
+    }
 };
 exports.WorkLogsController = WorkLogsController;
 __decorate([
@@ -110,6 +113,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, create_work_log_dto_1.CreateWorkLogDto, Array]),
     __metadata("design:returntype", Promise)
 ], WorkLogsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)('worker'),
+    (0, roles_decorator_1.Roles)(client_1.Role.WORKER),
+    (0, swagger_1.ApiOperation)({ summary: 'Get work logs for the current worker' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], WorkLogsController.prototype, "getWorkerLogs", null);
 exports.WorkLogsController = WorkLogsController = __decorate([
     (0, swagger_1.ApiTags)('Work Logs'),
     (0, swagger_1.ApiBearerAuth)(),

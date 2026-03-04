@@ -61,7 +61,7 @@ let WorkPhotosController = class WorkPhotosController {
     async getPhoto(year, month, filename, req, res) {
         const relativePath = `./uploads/work-photos/${year}/${month}/${filename}`;
         const photo = await this.prisma.workPhoto.findFirst({
-            where: { filePath: relativePath },
+            where: { filePath: { contains: filename } },
             include: {
                 workLog: {
                     include: {

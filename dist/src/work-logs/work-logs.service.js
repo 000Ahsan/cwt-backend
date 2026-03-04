@@ -36,14 +36,55 @@ let WorkLogsService = class WorkLogsService {
                 await this.prisma.workPhoto.create({
                     data: {
                         workLogId: workLog.id,
-                        filePath: photo.path,
+                        filePath: photo.path.replace(/\\/g, '/'),
                         mimeType: photo.mimetype,
                         size: photo.size,
                     },
                 });
             }
         }
-        return workLog;
+        const logsWithPhotos = await this.prisma.workLog.findUnique({
+            where: { id: workLog.id },
+            include: { photos: true },
+        });
+        if (!logsWithPhotos)
+            return workLog;
+        return {
+            ...logsWithPhotos,
+            photos: logsWithPhotos.photos.map(photo => ({
+                ...photo,
+            })),
+        };
+    }
+    async getWorkerLogs(workerId) {
+        const logs = await this.prisma.workLog.findMany({
+            where: {
+                workSession: {
+                    workerId: workerId,
+                },
+            },
+            include: {
+                workSession: {
+                    include: {
+                        project: {
+                            select: {
+                                name: true,
+                            },
+                        },
+                    },
+                },
+                photos: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+        return logs.map(log => ({
+            ...log,
+            photos: log.photos.map(photo => ({
+                ...photo,
+            })),
+        }));
     }
 };
 exports.WorkLogsService = WorkLogsService;

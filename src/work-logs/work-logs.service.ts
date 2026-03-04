@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class WorkLogsService {
     constructor(private prisma: PrismaService) { }
 
-    async createLog(workerId: string, data: { sessionId: string; description: string; photos?: any[] }): Promise<WorkLog> {
+    async createLog(workerId: string, data: { sessionId: string; description: string; photos?: any[] }): Promise<any> {
         // Verify session belongs to worker and is active
         const session = await this.prisma.workSession.findUnique({
             where: { id: data.sessionId },
@@ -29,14 +29,57 @@ export class WorkLogsService {
                 await this.prisma.workPhoto.create({
                     data: {
                         workLogId: workLog.id,
-                        filePath: photo.path,
+                        filePath: photo.path.replace(/\\/g, '/'),
                         mimeType: photo.mimetype,
                         size: photo.size,
                     },
                 });
             }
         }
+        const logsWithPhotos = await this.prisma.workLog.findUnique({
+            where: { id: workLog.id },
+            include: { photos: true },
+        });
 
-        return workLog;
+        if (!logsWithPhotos) return workLog;
+
+        return {
+            ...logsWithPhotos,
+            photos: logsWithPhotos.photos.map(photo => ({
+                ...photo,
+            })),
+        };
+    }
+
+    async getWorkerLogs(workerId: string) {
+        const logs = await this.prisma.workLog.findMany({
+            where: {
+                workSession: {
+                    workerId: workerId,
+                },
+            },
+            include: {
+                workSession: {
+                    include: {
+                        project: {
+                            select: {
+                                name: true,
+                            },
+                        },
+                    },
+                },
+                photos: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+
+        return logs.map(log => ({
+            ...log,
+            photos: log.photos.map(photo => ({
+                ...photo,
+            })),
+        }));
     }
 }
