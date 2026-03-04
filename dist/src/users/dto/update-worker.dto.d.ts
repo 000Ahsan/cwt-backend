@@ -3,4 +3,5 @@ export declare class UpdateWorkerDto {
     name?: string;
     password?: string;
     image?: string;
+    categories?: string;
 }

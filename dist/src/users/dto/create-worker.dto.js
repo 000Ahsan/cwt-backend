@@ -17,6 +17,7 @@ class CreateWorkerDto {
     name;
     password;
     image;
+    categories;
 }
 exports.CreateWorkerDto = CreateWorkerDto;
 __decorate([
@@ -41,4 +42,13 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateWorkerDto.prototype, "image", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 'CONSTRUCTION,CLEANING',
+        description: 'Comma-separated list of categories e.g. CONSTRUCTION, CLEANING, ROOFING',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateWorkerDto.prototype, "categories", void 0);
 //# sourceMappingURL=create-worker.dto.js.map

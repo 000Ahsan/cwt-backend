@@ -21,6 +21,7 @@ class UpdateProjectDto {
     startDate;
     endDate;
     active;
+    categories;
 }
 exports.UpdateProjectDto = UpdateProjectDto;
 __decorate([
@@ -71,4 +72,13 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Boolean)
 ], UpdateProjectDto.prototype, "active", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 'CONSTRUCTION,ROOFING',
+        description: 'Comma-separated list of categories e.g. CONSTRUCTION, CLEANING, ROOFING',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateProjectDto.prototype, "categories", void 0);
 //# sourceMappingURL=update-project.dto.js.map

@@ -11,6 +11,7 @@ export declare class UsersController {
         email: string;
         passwordHash: string;
         image: string | null;
+        categories: string | null;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
@@ -23,6 +24,7 @@ export declare class UsersController {
         email: string;
         passwordHash: string;
         image: string | null;
+        categories: string | null;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
@@ -35,6 +37,7 @@ export declare class UsersController {
         email: string;
         passwordHash: string;
         image: string | null;
+        categories: string | null;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
@@ -47,6 +50,7 @@ export declare class UsersController {
         email: string;
         passwordHash: string;
         image: string | null;
+        categories: string | null;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;

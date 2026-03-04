@@ -36,4 +36,12 @@ export class CreateProjectDto {
     @IsISO8601()
     @IsOptional()
     endDate?: string;
+
+    @ApiPropertyOptional({
+        example: 'CONSTRUCTION,ROOFING',
+        description: 'Comma-separated list of categories e.g. CONSTRUCTION, CLEANING, ROOFING',
+    })
+    @IsString()
+    @IsOptional()
+    categories?: string;
 }

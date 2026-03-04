@@ -20,6 +20,7 @@ class CreateProjectDto {
     longitude;
     startDate;
     endDate;
+    categories;
 }
 exports.CreateProjectDto = CreateProjectDto;
 __decorate([
@@ -64,4 +65,13 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateProjectDto.prototype, "endDate", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 'CONSTRUCTION,ROOFING',
+        description: 'Comma-separated list of categories e.g. CONSTRUCTION, CLEANING, ROOFING',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateProjectDto.prototype, "categories", void 0);
 //# sourceMappingURL=create-project.dto.js.map

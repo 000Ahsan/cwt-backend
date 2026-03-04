@@ -3,4 +3,5 @@ export declare class CreateWorkerDto {
     name: string;
     password: string;
     image?: string;
+    categories?: string;
 }

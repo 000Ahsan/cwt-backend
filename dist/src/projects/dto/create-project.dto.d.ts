@@ -6,4 +6,5 @@ export declare class CreateProjectDto {
     longitude?: number;
     startDate?: string;
     endDate?: string;
+    categories?: string;
 }

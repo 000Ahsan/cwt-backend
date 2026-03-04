@@ -8,6 +8,7 @@ export declare class ProjectsController {
     create(req: any, body: CreateProjectDto): Promise<{
         id: string;
         name: string;
+        categories: string | null;
         createdAt: Date;
         updatedAt: Date;
         contractorId: string;
@@ -23,6 +24,7 @@ export declare class ProjectsController {
     update(id: string, body: UpdateProjectDto, req: any): Promise<{
         id: string;
         name: string;
+        categories: string | null;
         createdAt: Date;
         updatedAt: Date;
         contractorId: string;
@@ -37,6 +39,7 @@ export declare class ProjectsController {
     remove(id: string, req: any): Promise<{
         id: string;
         name: string;
+        categories: string | null;
         createdAt: Date;
         updatedAt: Date;
         contractorId: string;

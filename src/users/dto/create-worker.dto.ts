@@ -19,4 +19,12 @@ export class CreateWorkerDto {
     @IsOptional()
     @IsString()
     image?: string;
+
+    @ApiPropertyOptional({
+        example: 'CONSTRUCTION,CLEANING',
+        description: 'Comma-separated list of categories e.g. CONSTRUCTION, CLEANING, ROOFING',
+    })
+    @IsOptional()
+    @IsString()
+    categories?: string;
 }

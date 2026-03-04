@@ -19,6 +19,7 @@ model User {
   email           String            @unique
   passwordHash    String
   image           String?
+  categories      String?           // Comma-separated: e.g. "CONSTRUCTION,CLEANING"
   contractorId    String?
   contractor      User?             @relation("ContractorToWorker", fields: [contractorId], references: [id])
   workers         User[]            @relation("ContractorToWorker")
@@ -38,6 +39,7 @@ model Project {
   name            String
   description     String?           @db.Text
   logo            String?
+  categories      String?           // Comma-separated: e.g. "CONSTRUCTION,ROOFING"
   latitude        Float?
   longitude       Float?
   startDate       DateTime?

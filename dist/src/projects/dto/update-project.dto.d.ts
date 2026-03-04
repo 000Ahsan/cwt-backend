@@ -7,4 +7,5 @@ export declare class UpdateProjectDto {
     startDate?: string;
     endDate?: string;
     active?: boolean;
+    categories?: string;
 }
