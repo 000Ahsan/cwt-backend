@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class WorkLogsService {
     constructor(private prisma: PrismaService) { }
 
-    async createLog(workerId: string, data: { sessionId: string; description: string; photos?: any[] }): Promise<WorkLog> {
+    async createLog(workerId: string, data: { sessionId: string; description: string; photos?: any[] }): Promise<any> {
         // Verify session belongs to worker and is active
         const session = await this.prisma.workSession.findUnique({
             where: { id: data.sessionId },
@@ -29,14 +29,123 @@ export class WorkLogsService {
                 await this.prisma.workPhoto.create({
                     data: {
                         workLogId: workLog.id,
-                        filePath: photo.path,
+                        filePath: photo.path.replace(/\\/g, '/'),
                         mimeType: photo.mimetype,
                         size: photo.size,
                     },
                 });
             }
         }
+        const logsWithPhotos = await this.prisma.workLog.findUnique({
+            where: { id: workLog.id },
+            include: { photos: true },
+        });
 
-        return workLog;
+        if (!logsWithPhotos) return workLog;
+
+        return {
+            ...logsWithPhotos,
+            photos: logsWithPhotos.photos.map(photo => ({
+                ...photo,
+            })),
+        };
+    }
+
+    async getWorkerLogs(workerId: string) {
+        const logs = await this.prisma.workLog.findMany({
+            where: {
+                workSession: {
+                    workerId: workerId,
+                },
+            },
+            include: {
+                workSession: {
+                    include: {
+                        project: {
+                            select: {
+                                name: true,
+                            },
+                        },
+                    },
+                },
+                photos: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+
+        return logs.map(log => ({
+            ...log,
+            photos: log.photos.map(photo => ({
+                ...photo,
+            })),
+        }));
+    }
+
+    async getContractorLogs(
+        contractorId: string,
+        filters: {
+            workerId?: string;
+            projectId?: string;
+            startDate?: string;
+            endDate?: string;
+            page?: number;
+            limit?: number;
+        },
+    ) {
+        const { workerId, projectId, startDate, endDate } = filters;
+        const page = Math.max(1, filters.page ?? 1);
+        const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
+        const skip = (page - 1) * limit;
+
+        const where: any = {
+            workSession: {
+                project: { contractorId },
+                ...(workerId && { workerId }),
+                ...(projectId && { projectId }),
+                ...(startDate || endDate
+                    ? {
+                        date: {
+                            ...(startDate && { gte: new Date(startDate) }),
+                            ...(endDate && { lte: new Date(endDate) }),
+                        },
+                    }
+                    : {}),
+            },
+        };
+
+        const [total, logs] = await Promise.all([
+            this.prisma.workLog.count({ where }),
+            this.prisma.workLog.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    photos: true,
+                    workSession: {
+                        include: {
+                            worker: { select: { id: true, name: true, email: true } },
+                            project: { select: { id: true, name: true } },
+                        },
+                    },
+                },
+            }),
+        ]);
+
+        return {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            data: logs.map(log => ({
+                ...log,
+                photos: log.photos.map(photo => ({
+                    ...photo,
+                    url: photo.filePath.replace('./', '/').replace(/\\/g, '/'),
+                })),
+            })),
+        };
     }
 }

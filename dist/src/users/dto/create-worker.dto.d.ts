@@ -1,0 +1,7 @@
+export declare class CreateWorkerDto {
+    email: string;
+    name: string;
+    password: string;
+    image?: string;
+    categories?: string;
+}
