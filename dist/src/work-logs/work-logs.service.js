@@ -86,6 +86,58 @@ let WorkLogsService = class WorkLogsService {
             })),
         }));
     }
+    async getContractorLogs(contractorId, filters) {
+        const { workerId, projectId, startDate, endDate } = filters;
+        const page = Math.max(1, filters.page ?? 1);
+        const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
+        const skip = (page - 1) * limit;
+        const where = {
+            workSession: {
+                project: { contractorId },
+                ...(workerId && { workerId }),
+                ...(projectId && { projectId }),
+                ...(startDate || endDate
+                    ? {
+                        date: {
+                            ...(startDate && { gte: new Date(startDate) }),
+                            ...(endDate && { lte: new Date(endDate) }),
+                        },
+                    }
+                    : {}),
+            },
+        };
+        const [total, logs] = await Promise.all([
+            this.prisma.workLog.count({ where }),
+            this.prisma.workLog.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    photos: true,
+                    workSession: {
+                        include: {
+                            worker: { select: { id: true, name: true, email: true } },
+                            project: { select: { id: true, name: true } },
+                        },
+                    },
+                },
+            }),
+        ]);
+        return {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            data: logs.map(log => ({
+                ...log,
+                photos: log.photos.map(photo => ({
+                    ...photo,
+                    url: photo.filePath.replace('./', '/').replace(/\\/g, '/'),
+                })),
+            })),
+        };
+    }
 };
 exports.WorkLogsService = WorkLogsService;
 exports.WorkLogsService = WorkLogsService = __decorate([

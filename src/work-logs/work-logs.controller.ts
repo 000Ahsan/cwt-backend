@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, UseInterceptors, UploadedFiles, Get } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, UseInterceptors, UploadedFiles, Get, Query } from '@nestjs/common';
 import 'multer';
 import { WorkLogsService } from './work-logs.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -9,7 +9,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { CreateWorkLogDto } from './dto/create-work-log.dto';
 
 @ApiTags('Work Logs')
@@ -62,5 +62,33 @@ export class WorkLogsController {
     @ApiOperation({ summary: 'Get work logs for the current worker' })
     async getWorkerLogs(@Request() req) {
         return this.workLogsService.getWorkerLogs(req.user.userId);
+    }
+
+    @Get('contractor')
+    @Roles(Role.CONTRACTOR)
+    @ApiOperation({ summary: 'Get all work logs for the contractor with filters and pagination' })
+    @ApiQuery({ name: 'workerId', required: false, type: String, description: 'Filter by worker ID' })
+    @ApiQuery({ name: 'projectId', required: false, type: String, description: 'Filter by project ID' })
+    @ApiQuery({ name: 'startDate', required: false, type: String, example: '2026-03-01', description: 'Start of date range (inclusive)' })
+    @ApiQuery({ name: 'endDate', required: false, type: String, example: '2026-03-31', description: 'End of date range (inclusive)' })
+    @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number (default: 1)' })
+    @ApiQuery({ name: 'limit', required: false, type: Number, example: 20, description: 'Items per page (default: 20, max: 100)' })
+    async getContractorLogs(
+        @Request() req,
+        @Query('workerId') workerId?: string,
+        @Query('projectId') projectId?: string,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string,
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+    ) {
+        return this.workLogsService.getContractorLogs(req.user.userId, {
+            workerId,
+            projectId,
+            startDate,
+            endDate,
+            page: page ? parseInt(page, 10) : undefined,
+            limit: limit ? parseInt(limit, 10) : undefined,
+        });
     }
 }

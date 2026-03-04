@@ -49,13 +49,86 @@ let ReportsService = class ReportsService {
         });
     }
     async getDashboardStats(contractorId) {
-        const [projectsCount, workersCount] = await Promise.all([
+        const [projectsCount, workersCount, timeAggregate] = await Promise.all([
             this.prisma.project.count({ where: { contractorId } }),
             this.prisma.user.count({ where: { contractorId, role: 'WORKER' } }),
+            this.prisma.workSession.aggregate({
+                where: {
+                    project: { contractorId },
+                    endTime: { not: null },
+                },
+                _sum: { totalMinutes: true },
+            }),
         ]);
+        const totalMinutes = timeAggregate._sum.totalMinutes ?? 0;
         return {
             projectsCount,
             workersCount,
+            totalHoursLogged: Math.round((totalMinutes / 60) * 100) / 100,
+        };
+    }
+    async getProjectsChartData(contractorId, startDate, endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setUTCHours(23, 59, 59, 999);
+        const sessions = await this.prisma.workSession.findMany({
+            where: {
+                project: { contractorId },
+                endTime: { not: null },
+                date: { gte: start, lte: end },
+            },
+            select: {
+                date: true,
+                totalMinutes: true,
+                project: { select: { id: true, name: true } },
+            },
+            orderBy: { date: 'asc' },
+        });
+        const projectMap = new Map();
+        sessions.forEach(s => projectMap.set(s.project.id, s.project.name));
+        const dateMap = new Map();
+        sessions.forEach(s => {
+            const dateKey = s.date.toISOString().slice(0, 10);
+            if (!dateMap.has(dateKey))
+                dateMap.set(dateKey, {});
+            const entry = dateMap.get(dateKey);
+            entry[s.project.id] = (entry[s.project.id] ?? 0) + (s.totalMinutes ?? 0);
+        });
+        return {
+            projects: Array.from(projectMap.entries()).map(([id, name]) => ({ id, name })),
+            series: Array.from(dateMap.entries()).map(([date, data]) => ({ date, data })),
+        };
+    }
+    async getWorkersChartData(contractorId, startDate, endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setUTCHours(23, 59, 59, 999);
+        const sessions = await this.prisma.workSession.findMany({
+            where: {
+                project: { contractorId },
+                endTime: { not: null },
+                date: { gte: start, lte: end },
+            },
+            select: {
+                date: true,
+                totalMinutes: true,
+                worker: { select: { id: true, name: true } },
+            },
+            orderBy: { date: 'asc' },
+        });
+        const workerMap = new Map();
+        sessions.forEach(s => workerMap.set(s.worker.id, s.worker.name));
+        const dateMap = new Map();
+        sessions.forEach(s => {
+            const dateKey = s.date.toISOString().slice(0, 10);
+            if (!dateMap.has(dateKey))
+                dateMap.set(dateKey, {});
+            const entry = dateMap.get(dateKey);
+            entry[s.worker.id] = (entry[s.worker.id] ?? 0) + (s.totalMinutes ?? 0);
+        });
+        return {
+            workers: Array.from(workerMap.entries()).map(([id, name]) => ({ id, name })),
+            series: Array.from(dateMap.entries()).map(([date, data]) => ({ date, data })),
         };
     }
 };

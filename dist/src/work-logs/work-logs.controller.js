@@ -74,6 +74,16 @@ let WorkLogsController = class WorkLogsController {
     async getWorkerLogs(req) {
         return this.workLogsService.getWorkerLogs(req.user.userId);
     }
+    async getContractorLogs(req, workerId, projectId, startDate, endDate, page, limit) {
+        return this.workLogsService.getContractorLogs(req.user.userId, {
+            workerId,
+            projectId,
+            startDate,
+            endDate,
+            page: page ? parseInt(page, 10) : undefined,
+            limit: limit ? parseInt(limit, 10) : undefined,
+        });
+    }
 };
 exports.WorkLogsController = WorkLogsController;
 __decorate([
@@ -122,6 +132,27 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], WorkLogsController.prototype, "getWorkerLogs", null);
+__decorate([
+    (0, common_1.Get)('contractor'),
+    (0, roles_decorator_1.Roles)(client_1.Role.CONTRACTOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all work logs for the contractor with filters and pagination' }),
+    (0, swagger_1.ApiQuery)({ name: 'workerId', required: false, type: String, description: 'Filter by worker ID' }),
+    (0, swagger_1.ApiQuery)({ name: 'projectId', required: false, type: String, description: 'Filter by project ID' }),
+    (0, swagger_1.ApiQuery)({ name: 'startDate', required: false, type: String, example: '2026-03-01', description: 'Start of date range (inclusive)' }),
+    (0, swagger_1.ApiQuery)({ name: 'endDate', required: false, type: String, example: '2026-03-31', description: 'End of date range (inclusive)' }),
+    (0, swagger_1.ApiQuery)({ name: 'page', required: false, type: Number, example: 1, description: 'Page number (default: 1)' }),
+    (0, swagger_1.ApiQuery)({ name: 'limit', required: false, type: Number, example: 20, description: 'Items per page (default: 20, max: 100)' }),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('workerId')),
+    __param(2, (0, common_1.Query)('projectId')),
+    __param(3, (0, common_1.Query)('startDate')),
+    __param(4, (0, common_1.Query)('endDate')),
+    __param(5, (0, common_1.Query)('page')),
+    __param(6, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], WorkLogsController.prototype, "getContractorLogs", null);
 exports.WorkLogsController = WorkLogsController = __decorate([
     (0, swagger_1.ApiTags)('Work Logs'),
     (0, swagger_1.ApiBearerAuth)(),

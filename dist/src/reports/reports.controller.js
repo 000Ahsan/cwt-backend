@@ -36,6 +36,12 @@ let ReportsController = class ReportsController {
     async getDashboardStats(req) {
         return this.reportsService.getDashboardStats(req.user.userId);
     }
+    async getProjectsChart(req, startDate, endDate) {
+        return this.reportsService.getProjectsChartData(req.user.userId, startDate, endDate);
+    }
+    async getWorkersChart(req, startDate, endDate) {
+        return this.reportsService.getWorkersChartData(req.user.userId, startDate, endDate);
+    }
 };
 exports.ReportsController = ReportsController;
 __decorate([
@@ -66,6 +72,30 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], ReportsController.prototype, "getDashboardStats", null);
+__decorate([
+    (0, common_1.Get)('chart/projects'),
+    (0, swagger_1.ApiOperation)({ summary: 'Daily minutes logged per project (line chart data)' }),
+    (0, swagger_1.ApiQuery)({ name: 'startDate', required: true, type: String, example: '2026-03-01', description: 'Start of date range (YYYY-MM-DD)' }),
+    (0, swagger_1.ApiQuery)({ name: 'endDate', required: true, type: String, example: '2026-03-31', description: 'End of date range (YYYY-MM-DD)' }),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('startDate')),
+    __param(2, (0, common_1.Query)('endDate')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], ReportsController.prototype, "getProjectsChart", null);
+__decorate([
+    (0, common_1.Get)('chart/workers'),
+    (0, swagger_1.ApiOperation)({ summary: 'Daily minutes logged per worker (line chart data)' }),
+    (0, swagger_1.ApiQuery)({ name: 'startDate', required: true, type: String, example: '2026-03-01', description: 'Start of date range (YYYY-MM-DD)' }),
+    (0, swagger_1.ApiQuery)({ name: 'endDate', required: true, type: String, example: '2026-03-31', description: 'End of date range (YYYY-MM-DD)' }),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('startDate')),
+    __param(2, (0, common_1.Query)('endDate')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], ReportsController.prototype, "getWorkersChart", null);
 exports.ReportsController = ReportsController = __decorate([
     (0, swagger_1.ApiTags)('Reports'),
     (0, swagger_1.ApiBearerAuth)(),

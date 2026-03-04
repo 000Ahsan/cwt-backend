@@ -35,4 +35,28 @@ export class ReportsController {
     async getDashboardStats(@Request() req) {
         return this.reportsService.getDashboardStats(req.user.userId);
     }
+
+    @Get('chart/projects')
+    @ApiOperation({ summary: 'Daily minutes logged per project (line chart data)' })
+    @ApiQuery({ name: 'startDate', required: true, type: String, example: '2026-03-01', description: 'Start of date range (YYYY-MM-DD)' })
+    @ApiQuery({ name: 'endDate', required: true, type: String, example: '2026-03-31', description: 'End of date range (YYYY-MM-DD)' })
+    async getProjectsChart(
+        @Request() req,
+        @Query('startDate') startDate: string,
+        @Query('endDate') endDate: string,
+    ) {
+        return this.reportsService.getProjectsChartData(req.user.userId, startDate, endDate);
+    }
+
+    @Get('chart/workers')
+    @ApiOperation({ summary: 'Daily minutes logged per worker (line chart data)' })
+    @ApiQuery({ name: 'startDate', required: true, type: String, example: '2026-03-01', description: 'Start of date range (YYYY-MM-DD)' })
+    @ApiQuery({ name: 'endDate', required: true, type: String, example: '2026-03-31', description: 'End of date range (YYYY-MM-DD)' })
+    async getWorkersChart(
+        @Request() req,
+        @Query('startDate') startDate: string,
+        @Query('endDate') endDate: string,
+    ) {
+        return this.reportsService.getWorkersChartData(req.user.userId, startDate, endDate);
+    }
 }

@@ -11,10 +11,10 @@ export declare class WorkLogsService {
         photos: {
             id: string;
             createdAt: Date;
+            workLogId: string;
             filePath: string;
             mimeType: string;
             size: number;
-            workLogId: string;
         }[];
         workSession: {
             project: {
@@ -23,17 +23,66 @@ export declare class WorkLogsService {
         } & {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
-            projectId: string;
             workerId: string;
+            projectId: string;
             startTime: Date;
             endTime: Date | null;
             totalMinutes: number | null;
             date: Date;
+            updatedAt: Date;
         };
         id: string;
-        createdAt: Date;
-        description: string;
         workSessionId: string;
+        description: string;
+        createdAt: Date;
     }[]>;
+    getContractorLogs(contractorId: string, filters: {
+        workerId?: string;
+        projectId?: string;
+        startDate?: string;
+        endDate?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<{
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+        data: {
+            photos: {
+                url: string;
+                id: string;
+                createdAt: Date;
+                workLogId: string;
+                filePath: string;
+                mimeType: string;
+                size: number;
+            }[];
+            workSession: {
+                worker: {
+                    id: string;
+                    name: string;
+                    email: string;
+                };
+                project: {
+                    id: string;
+                    name: string;
+                };
+            } & {
+                id: string;
+                createdAt: Date;
+                workerId: string;
+                projectId: string;
+                startTime: Date;
+                endTime: Date | null;
+                totalMinutes: number | null;
+                date: Date;
+                updatedAt: Date;
+            };
+            id: string;
+            workSessionId: string;
+            description: string;
+            createdAt: Date;
+        }[];
+    }>;
 }

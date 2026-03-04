@@ -3,21 +3,21 @@ export declare class ReportsController {
     private reportsService;
     constructor(reportsService: ReportsService);
     getDaily(req: any, dateStr: string): Promise<({
-        project: {
-            name: string;
-        };
         worker: {
             name: string;
             email: string;
+        };
+        project: {
+            name: string;
         };
         workLogs: ({
             photos: {
                 id: string;
                 createdAt: Date;
+                workLogId: string;
                 filePath: string;
                 mimeType: string;
                 size: number;
-                workLogId: string;
             }[];
         } & {
             id: string;
@@ -27,37 +27,58 @@ export declare class ReportsController {
         })[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        projectId: string;
         workerId: string;
+        projectId: string;
         startTime: Date;
         endTime: Date | null;
         totalMinutes: number | null;
         date: Date;
+        createdAt: Date;
+        updatedAt: Date;
     })[]>;
     getWeekly(req: any, dateStr: string): Promise<({
-        project: {
+        worker: {
             id: string;
             name: string;
         };
-        worker: {
+        project: {
             id: string;
             name: string;
         };
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        projectId: string;
         workerId: string;
+        projectId: string;
         startTime: Date;
         endTime: Date | null;
         totalMinutes: number | null;
         date: Date;
+        createdAt: Date;
+        updatedAt: Date;
     })[]>;
     getDashboardStats(req: any): Promise<{
         projectsCount: number;
         workersCount: number;
+        totalHoursLogged: number;
+    }>;
+    getProjectsChart(req: any, startDate: string, endDate: string): Promise<{
+        projects: {
+            id: string;
+            name: string;
+        }[];
+        series: {
+            date: string;
+            data: Record<string, number>;
+        }[];
+    }>;
+    getWorkersChart(req: any, startDate: string, endDate: string): Promise<{
+        workers: {
+            id: string;
+            name: string;
+        }[];
+        series: {
+            date: string;
+            data: Record<string, number>;
+        }[];
     }>;
 }
