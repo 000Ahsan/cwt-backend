@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, UseInterceptors, UploadedFiles, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, UseInterceptors, UploadedFiles, Get, Query, Patch, Param } from '@nestjs/common';
 import 'multer';
 import { WorkLogsService } from './work-logs.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { CreateWorkLogDto } from './dto/create-work-log.dto';
+import { SignOffWorkLogDto } from './dto/sign-off-work-log.dto';
 
 @ApiTags('Work Logs')
 @ApiBearerAuth()
@@ -90,5 +91,16 @@ export class WorkLogsController {
             page: page ? parseInt(page, 10) : undefined,
             limit: limit ? parseInt(limit, 10) : undefined,
         });
+    }
+
+    @Patch(':id/sign-off')
+    @Roles(Role.CONTRACTOR)
+    @ApiOperation({ summary: 'Sign off (approve/reject) a work log' })
+    async signOff(
+        @Request() req,
+        @Param('id') id: string,
+        @Body() body: SignOffWorkLogDto,
+    ) {
+        return this.workLogsService.signOffLog(req.user.userId, id, body);
     }
 }

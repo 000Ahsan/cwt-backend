@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, Delete } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -33,5 +33,12 @@ export class SessionsController {
     @ApiOperation({ summary: 'Get work history for the logged-in worker' })
     async history(@Request() req) {
         return this.sessionsService.getWorkHistory(req.user.userId);
+    }
+
+    @Delete('discard')
+    @Roles(Role.WORKER)
+    @ApiOperation({ summary: 'Discard (permanently delete) the current active session' })
+    async discard(@Request() req) {
+        return this.sessionsService.discardActiveSession(req.user.userId);
     }
 }

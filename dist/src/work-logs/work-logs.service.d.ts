@@ -1,4 +1,5 @@
 import { PrismaService } from '../common/prisma/prisma.service';
+import { WorkLogStatus } from '@prisma/client';
 export declare class WorkLogsService {
     private prisma;
     constructor(prisma: PrismaService);
@@ -35,6 +36,8 @@ export declare class WorkLogsService {
         createdAt: Date;
         description: string;
         workSessionId: string;
+        status: import("@prisma/client").$Enums.WorkLogStatus;
+        contractorComment: string | null;
     }[]>;
     getContractorLogs(contractorId: string, filters: {
         workerId?: string;
@@ -83,6 +86,19 @@ export declare class WorkLogsService {
             createdAt: Date;
             description: string;
             workSessionId: string;
+            status: import("@prisma/client").$Enums.WorkLogStatus;
+            contractorComment: string | null;
         }[];
+    }>;
+    signOffLog(contractorId: string, logId: string, data: {
+        status: WorkLogStatus;
+        comment?: string;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        description: string;
+        workSessionId: string;
+        status: import("@prisma/client").$Enums.WorkLogStatus;
+        contractorComment: string | null;
     }>;
 }

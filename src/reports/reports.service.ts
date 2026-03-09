@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { WorkLogStatus } from '@prisma/client';
 
 @Injectable()
 export class ReportsService {
@@ -48,12 +49,16 @@ export class ReportsService {
                 where: {
                     project: { contractorId },
                     endTime: { not: null },
+                    workLogs: {
+                        some: { status: WorkLogStatus.APPROVED },
+                        none: { status: { not: WorkLogStatus.APPROVED } },
+                    },
                 },
                 _sum: { totalMinutes: true },
             }),
         ]);
 
-        const totalMinutes = timeAggregate._sum.totalMinutes ?? 0;
+        const totalMinutes = timeAggregate?._sum?.totalMinutes ?? 0;
 
         return {
             projectsCount,
@@ -64,26 +69,21 @@ export class ReportsService {
 
     /**
      * Returns daily time-logged per project for line charts.
-     * Response shape:
-     * {
-     *   projects: [{ id, name }],
-     *   series: [
-     *     { date: "2026-03-01", data: { "<projectId>": minutesLogged, ... } },
-     *     ...
-     *   ]
-     * }
      */
     async getProjectsChartData(contractorId: string, startDate: string, endDate: string) {
         const start = new Date(startDate);
         const end = new Date(endDate);
-        // Include the full end day
         end.setUTCHours(23, 59, 59, 999);
 
         const sessions = await this.prisma.workSession.findMany({
             where: {
                 project: { contractorId },
-                endTime: { not: null }, // Only closed sessions have meaningful totalMinutes
+                endTime: { not: null },
                 date: { gte: start, lte: end },
+                workLogs: {
+                    some: { status: WorkLogStatus.APPROVED },
+                    none: { status: { not: WorkLogStatus.APPROVED } },
+                },
             },
             select: {
                 date: true,
@@ -93,11 +93,9 @@ export class ReportsService {
             orderBy: { date: 'asc' },
         });
 
-        // Collect unique projects
         const projectMap = new Map<string, string>();
         sessions.forEach(s => projectMap.set(s.project.id, s.project.name));
 
-        // Aggregate: { "2026-03-01" -> { projectId -> totalMinutes } }
         const dateMap = new Map<string, Record<string, number>>();
         sessions.forEach(s => {
             const dateKey = s.date.toISOString().slice(0, 10);
@@ -114,14 +112,6 @@ export class ReportsService {
 
     /**
      * Returns daily time-logged per worker for line charts.
-     * Response shape:
-     * {
-     *   workers: [{ id, name }],
-     *   series: [
-     *     { date: "2026-03-01", data: { "<workerId>": minutesLogged, ... } },
-     *     ...
-     *   ]
-     * }
      */
     async getWorkersChartData(contractorId: string, startDate: string, endDate: string) {
         const start = new Date(startDate);
@@ -133,6 +123,10 @@ export class ReportsService {
                 project: { contractorId },
                 endTime: { not: null },
                 date: { gte: start, lte: end },
+                workLogs: {
+                    some: { status: WorkLogStatus.APPROVED },
+                    none: { status: { not: WorkLogStatus.APPROVED } },
+                },
             },
             select: {
                 date: true,
@@ -142,11 +136,9 @@ export class ReportsService {
             orderBy: { date: 'asc' },
         });
 
-        // Collect unique workers
         const workerMap = new Map<string, string>();
         sessions.forEach(s => workerMap.set(s.worker.id, s.worker.name));
 
-        // Aggregate: { "2026-03-01" -> { workerId -> totalMinutes } }
         const dateMap = new Map<string, Record<string, number>>();
         sessions.forEach(s => {
             const dateKey = s.date.toISOString().slice(0, 10);

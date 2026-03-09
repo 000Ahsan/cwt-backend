@@ -1,6 +1,6 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { WorkLog, WorkPhoto } from '@prisma/client';
+import { WorkLog, WorkPhoto, WorkLogStatus } from '@prisma/client';
 import * as path from 'path';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
@@ -147,5 +147,30 @@ export class WorkLogsService {
                 })),
             })),
         };
+    }
+    async signOffLog(contractorId: string, logId: string, data: { status: WorkLogStatus; comment?: string }) {
+        const log = await this.prisma.workLog.findUnique({
+            where: { id: logId },
+            include: {
+                workSession: {
+                    include: {
+                        project: true,
+                    },
+                },
+            },
+        });
+
+        if (!log) throw new NotFoundException('Work log not found');
+        if (log.workSession.project.contractorId !== contractorId) {
+            throw new ForbiddenException('You do not have permission to sign off this work log');
+        }
+
+        return this.prisma.workLog.update({
+            where: { id: logId },
+            data: {
+                status: data.status,
+                contractorComment: data.comment,
+            },
+        });
     }
 }

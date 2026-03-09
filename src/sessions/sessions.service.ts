@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { WorkSession } from '@prisma/client';
+import { WorkSession, WorkLogStatus } from '@prisma/client';
 
 @Injectable()
 export class SessionsService {
@@ -11,13 +11,37 @@ export class SessionsService {
         const activeSession = await this.prisma.workSession.findFirst({
             where: { workerId, endTime: null },
         });
-        if (activeSession) throw new BadRequestException('You already have an active session');
+
+        // If an active session exists, hard delete it
+        if (activeSession) {
+            await this.prisma.workSession.delete({
+                where: { id: activeSession.id },
+            });
+        }
 
         // Verify project assignment
         const assignment = await this.prisma.projectAssignment.findUnique({
             where: { projectId_workerId: { projectId, workerId } },
         });
         if (!assignment) throw new BadRequestException('You are not assigned to this project');
+
+        // Check for unsigned-off / rejected work logs for this project
+        // Requirement: Until one work log of a project of a worker is not signed off, he should not be able to start the session again.
+        const pendingLogs = await this.prisma.workLog.findFirst({
+            where: {
+                workSession: {
+                    workerId,
+                    projectId,
+                },
+                OR: [
+                    { status: WorkLogStatus.PENDING },
+                ],
+            },
+        });
+
+        if (pendingLogs) {
+            throw new BadRequestException('You have pending work logs for this project that must be signed off by the contractor before starting a new session.');
+        }
 
         return this.prisma.workSession.create({
             data: {
@@ -53,5 +77,21 @@ export class SessionsService {
             include: { project: true, workLogs: true },
             orderBy: { startTime: 'desc' },
         });
+    }
+
+    async discardActiveSession(workerId: string): Promise<{ message: string }> {
+        const activeSession = await this.prisma.workSession.findFirst({
+            where: { workerId, endTime: null },
+        });
+
+        if (!activeSession) {
+            throw new NotFoundException('No active session found to discard');
+        }
+
+        await this.prisma.workSession.delete({
+            where: { id: activeSession.id },
+        });
+
+        return { message: 'Session discarded successfully' };
     }
 }
