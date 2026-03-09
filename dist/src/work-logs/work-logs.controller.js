@@ -59,6 +59,7 @@ const uuid_1 = require("uuid");
 const path = __importStar(require("path"));
 const swagger_1 = require("@nestjs/swagger");
 const create_work_log_dto_1 = require("./dto/create-work-log.dto");
+const sign_off_work_log_dto_1 = require("./dto/sign-off-work-log.dto");
 let WorkLogsController = class WorkLogsController {
     workLogsService;
     constructor(workLogsService) {
@@ -83,6 +84,9 @@ let WorkLogsController = class WorkLogsController {
             page: page ? parseInt(page, 10) : undefined,
             limit: limit ? parseInt(limit, 10) : undefined,
         });
+    }
+    async signOff(req, id, body) {
+        return this.workLogsService.signOffLog(req.user.userId, id, body);
     }
 };
 exports.WorkLogsController = WorkLogsController;
@@ -153,6 +157,17 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], WorkLogsController.prototype, "getContractorLogs", null);
+__decorate([
+    (0, common_1.Patch)(':id/sign-off'),
+    (0, roles_decorator_1.Roles)(client_1.Role.CONTRACTOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Sign off (approve/reject) a work log' }),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, sign_off_work_log_dto_1.SignOffWorkLogDto]),
+    __metadata("design:returntype", Promise)
+], WorkLogsController.prototype, "signOff", null);
 exports.WorkLogsController = WorkLogsController = __decorate([
     (0, swagger_1.ApiTags)('Work Logs'),
     (0, swagger_1.ApiBearerAuth)(),

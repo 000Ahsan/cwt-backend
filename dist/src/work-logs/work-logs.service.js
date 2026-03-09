@@ -138,6 +138,30 @@ let WorkLogsService = class WorkLogsService {
             })),
         };
     }
+    async signOffLog(contractorId, logId, data) {
+        const log = await this.prisma.workLog.findUnique({
+            where: { id: logId },
+            include: {
+                workSession: {
+                    include: {
+                        project: true,
+                    },
+                },
+            },
+        });
+        if (!log)
+            throw new common_1.NotFoundException('Work log not found');
+        if (log.workSession.project.contractorId !== contractorId) {
+            throw new common_1.ForbiddenException('You do not have permission to sign off this work log');
+        }
+        return this.prisma.workLog.update({
+            where: { id: logId },
+            data: {
+                status: data.status,
+                contractorComment: data.comment,
+            },
+        });
+    }
 };
 exports.WorkLogsService = WorkLogsService;
 exports.WorkLogsService = WorkLogsService = __decorate([

@@ -35,6 +35,9 @@ let SessionsController = class SessionsController {
     async history(req) {
         return this.sessionsService.getWorkHistory(req.user.userId);
     }
+    async discard(req) {
+        return this.sessionsService.discardActiveSession(req.user.userId);
+    }
 };
 exports.SessionsController = SessionsController;
 __decorate([
@@ -65,6 +68,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], SessionsController.prototype, "history", null);
+__decorate([
+    (0, common_1.Delete)('discard'),
+    (0, roles_decorator_1.Roles)(client_1.Role.WORKER),
+    (0, swagger_1.ApiOperation)({ summary: 'Discard (permanently delete) the current active session' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SessionsController.prototype, "discard", null);
 exports.SessionsController = SessionsController = __decorate([
     (0, swagger_1.ApiTags)('Sessions'),
     (0, swagger_1.ApiBearerAuth)(),

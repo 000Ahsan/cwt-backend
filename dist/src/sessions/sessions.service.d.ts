@@ -6,4 +6,7 @@ export declare class SessionsService {
     startSession(workerId: string, projectId: string): Promise<WorkSession>;
     endSession(workerId: string): Promise<WorkSession>;
     getWorkHistory(workerId: string): Promise<WorkSession[]>;
+    discardActiveSession(workerId: string): Promise<{
+        message: string;
+    }>;
 }

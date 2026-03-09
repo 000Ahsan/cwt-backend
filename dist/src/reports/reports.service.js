@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../common/prisma/prisma.service");
+const client_1 = require("@prisma/client");
 let ReportsService = class ReportsService {
     prisma;
     constructor(prisma) {
@@ -56,11 +57,15 @@ let ReportsService = class ReportsService {
                 where: {
                     project: { contractorId },
                     endTime: { not: null },
+                    workLogs: {
+                        some: { status: client_1.WorkLogStatus.APPROVED },
+                        none: { status: { not: client_1.WorkLogStatus.APPROVED } },
+                    },
                 },
                 _sum: { totalMinutes: true },
             }),
         ]);
-        const totalMinutes = timeAggregate._sum.totalMinutes ?? 0;
+        const totalMinutes = timeAggregate?._sum?.totalMinutes ?? 0;
         return {
             projectsCount,
             workersCount,
@@ -76,6 +81,10 @@ let ReportsService = class ReportsService {
                 project: { contractorId },
                 endTime: { not: null },
                 date: { gte: start, lte: end },
+                workLogs: {
+                    some: { status: client_1.WorkLogStatus.APPROVED },
+                    none: { status: { not: client_1.WorkLogStatus.APPROVED } },
+                },
             },
             select: {
                 date: true,
@@ -108,6 +117,10 @@ let ReportsService = class ReportsService {
                 project: { contractorId },
                 endTime: { not: null },
                 date: { gte: start, lte: end },
+                workLogs: {
+                    some: { status: client_1.WorkLogStatus.APPROVED },
+                    none: { status: { not: client_1.WorkLogStatus.APPROVED } },
+                },
             },
             select: {
                 date: true,

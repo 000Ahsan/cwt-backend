@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `work_logs` ADD COLUMN `contractorComment` TEXT NULL,
+    ADD COLUMN `status` ENUM('PENDING', 'APPROVED', 'REJECTED') NOT NULL DEFAULT 'PENDING';
