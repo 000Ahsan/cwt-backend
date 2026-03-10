@@ -3,60 +3,60 @@ export declare class ReportsService {
     private prisma;
     constructor(prisma: PrismaService);
     getDailyReport(contractorId: string, date: Date): Promise<({
+        project: {
+            name: string;
+        };
         worker: {
             name: string;
             email: string;
-        };
-        project: {
-            name: string;
         };
         workLogs: ({
             photos: {
                 id: string;
                 createdAt: Date;
-                workLogId: string;
                 filePath: string;
                 mimeType: string;
                 size: number;
+                workLogId: string;
             }[];
         } & {
             id: string;
             createdAt: Date;
             description: string;
-            workSessionId: string;
             status: import("@prisma/client").$Enums.WorkLogStatus;
+            workSessionId: string;
             contractorComment: string | null;
         })[];
     } & {
         id: string;
-        workerId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        date: Date;
         projectId: string;
+        workerId: string;
         startTime: Date;
         endTime: Date | null;
         totalMinutes: number | null;
-        date: Date;
-        createdAt: Date;
-        updatedAt: Date;
     })[]>;
     getWeeklyReport(contractorId: string, startDate: Date): Promise<({
-        worker: {
+        project: {
             id: string;
             name: string;
         };
-        project: {
+        worker: {
             id: string;
             name: string;
         };
     } & {
         id: string;
-        workerId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        date: Date;
         projectId: string;
+        workerId: string;
         startTime: Date;
         endTime: Date | null;
         totalMinutes: number | null;
-        date: Date;
-        createdAt: Date;
-        updatedAt: Date;
     })[]>;
     getDashboardStats(contractorId: string): Promise<{
         projectsCount: number;

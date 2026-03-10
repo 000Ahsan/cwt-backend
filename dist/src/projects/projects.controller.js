@@ -70,7 +70,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ProjectsController.prototype, "findAll", null);
 __decorate([
-    (0, common_1.Put)(':id'),
+    (0, common_1.Patch)(':id'),
     (0, roles_decorator_1.Roles)(client_1.Role.CONTRACTOR),
     (0, swagger_1.ApiOperation)({ summary: 'Update an existing project' }),
     __param(0, (0, common_1.Param)('id')),

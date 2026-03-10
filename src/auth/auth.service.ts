@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class AuthService {
@@ -39,5 +40,23 @@ export class AuthService {
         return {
             access_token: await this.jwtService.signAsync(payload),
         };
+    }
+
+    async updateProfile(userId: string, data: UpdateProfileDto, imagePath?: string) {
+        const updateData: any = {
+            name: data.name,
+            email: data.email,
+        };
+
+        if (data.password) {
+            updateData.passwordHash = data.password;
+        }
+
+        if (imagePath) {
+            updateData.image = imagePath;
+        }
+
+        const user = await this.usersService.update(userId, updateData);
+        return this.usersService.removePassword(user);
     }
 }

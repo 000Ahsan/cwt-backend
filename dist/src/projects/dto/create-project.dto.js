@@ -18,6 +18,8 @@ class CreateProjectDto {
     logo;
     latitude;
     longitude;
+    targetHours;
+    address;
     startDate;
     endDate;
     categories;
@@ -53,6 +55,18 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], CreateProjectDto.prototype, "longitude", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 100.5 }),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateProjectDto.prototype, "targetHours", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: '123 Main St, Anytown, USA' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateProjectDto.prototype, "address", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ example: '2024-03-01T00:00:00Z' }),
     (0, class_validator_1.IsISO8601)(),

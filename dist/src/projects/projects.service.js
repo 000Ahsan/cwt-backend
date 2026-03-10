@@ -13,6 +13,7 @@ exports.ProjectsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../common/prisma/prisma.service");
 const file_service_1 = require("../common/file/file.service");
+const client_1 = require("@prisma/client");
 let ProjectsService = class ProjectsService {
     prisma;
     fileService;
@@ -45,6 +46,15 @@ let ProjectsService = class ProjectsService {
                         worker: true,
                     },
                 },
+                workSessions: {
+                    where: {
+                        endTime: { not: null },
+                        workLogs: {
+                            some: { status: client_1.WorkLogStatus.APPROVED },
+                            none: { status: { not: client_1.WorkLogStatus.APPROVED } },
+                        },
+                    },
+                },
             },
         });
         return projects.map(p => this._mapProjectWithWorkers(p));
@@ -58,6 +68,15 @@ let ProjectsService = class ProjectsService {
                         worker: true,
                     },
                 },
+                workSessions: {
+                    where: {
+                        endTime: { not: null },
+                        workLogs: {
+                            some: { status: client_1.WorkLogStatus.APPROVED },
+                            none: { status: { not: client_1.WorkLogStatus.APPROVED } },
+                        },
+                    },
+                },
             },
         });
         if (!project)
@@ -65,12 +84,19 @@ let ProjectsService = class ProjectsService {
         return this._mapProjectWithWorkers(project);
     }
     _mapProjectWithWorkers(project) {
-        const { assignments, ...projectData } = project;
+        const { assignments, workSessions, ...projectData } = project;
+        const actualHours = workSessions.reduce((acc, session) => acc + ((session.totalMinutes || 0) / 60), 0);
         return {
             ...projectData,
+            actualHours: Math.round(actualHours * 100) / 100,
             workers: assignments.map(a => {
                 const { passwordHash, ...workerData } = a.worker;
-                return workerData;
+                const workerSessions = workSessions.filter(s => s.workerId === workerData.id);
+                const projectHours = workerSessions.reduce((acc, session) => acc + ((session.totalMinutes || 0) / 60), 0);
+                return {
+                    ...workerData,
+                    projectHours: Math.round(projectHours * 100) / 100,
+                };
             }),
         };
     }
@@ -120,9 +146,36 @@ let ProjectsService = class ProjectsService {
     async findAssignedProjects(workerId) {
         const assignments = await this.prisma.projectAssignment.findMany({
             where: { workerId },
-            include: { project: true },
+            include: {
+                project: {
+                    include: {
+                        assignments: {
+                            include: {
+                                worker: true,
+                            },
+                        },
+                        workSessions: {
+                            where: {
+                                endTime: { not: null },
+                                workLogs: {
+                                    some: { status: client_1.WorkLogStatus.APPROVED },
+                                    none: { status: { not: client_1.WorkLogStatus.APPROVED } },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
         });
-        return assignments.map(a => a.project);
+        const projects = assignments.map(a => {
+            const mappedProject = this._mapProjectWithWorkers(a.project);
+            const myStats = mappedProject.workers.find(w => w.id === workerId);
+            return {
+                ...mappedProject,
+                myHours: myStats ? myStats.projectHours : 0,
+            };
+        });
+        return projects;
     }
 };
 exports.ProjectsService = ProjectsService;

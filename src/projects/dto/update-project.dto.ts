@@ -27,6 +27,16 @@ export class UpdateProjectDto {
     @IsOptional()
     longitude?: number;
 
+    @ApiPropertyOptional({ example: 100.5 })
+    @IsNumber()
+    @IsOptional()
+    targetHours?: number;
+
+    @ApiPropertyOptional({ example: '123 Main St, Anytown, USA' })
+    @IsString()
+    @IsOptional()
+    address?: string;
+
     @ApiPropertyOptional({ example: '2024-03-01T00:00:00Z' })
     @IsISO8601()
     @IsOptional()

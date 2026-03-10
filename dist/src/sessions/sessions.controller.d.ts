@@ -5,36 +5,36 @@ export declare class SessionsController {
     constructor(sessionsService: SessionsService);
     start(req: any, body: StartSessionDto): Promise<{
         id: string;
-        workerId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        date: Date;
         projectId: string;
+        workerId: string;
         startTime: Date;
         endTime: Date | null;
         totalMinutes: number | null;
-        date: Date;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     end(req: any): Promise<{
         id: string;
-        workerId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        date: Date;
         projectId: string;
+        workerId: string;
         startTime: Date;
         endTime: Date | null;
         totalMinutes: number | null;
-        date: Date;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     history(req: any): Promise<{
         id: string;
-        workerId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        date: Date;
         projectId: string;
+        workerId: string;
         startTime: Date;
         endTime: Date | null;
         totalMinutes: number | null;
-        date: Date;
-        createdAt: Date;
-        updatedAt: Date;
     }[]>;
     discard(req: any): Promise<{
         message: string;

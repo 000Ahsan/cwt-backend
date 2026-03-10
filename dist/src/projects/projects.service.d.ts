@@ -15,9 +15,9 @@ export declare class ProjectsService {
     remove(id: string, contractorId: string): Promise<Project>;
     assignWorker(projectId: string, workerId: string, contractorId: string): Promise<{
         id: string;
+        assignedAt: Date;
         projectId: string;
         workerId: string;
-        assignedAt: Date;
     }>;
-    findAssignedProjects(workerId: string): Promise<Project[]>;
+    findAssignedProjects(workerId: string): Promise<any>;
 }

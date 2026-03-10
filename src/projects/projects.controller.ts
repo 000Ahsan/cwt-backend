@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -35,7 +35,7 @@ export class ProjectsController {
         return [];
     }
 
-    @Put(':id')
+    @Patch(':id')
     @Roles(Role.CONTRACTOR)
     @ApiOperation({ summary: 'Update an existing project' })
     async update(@Param('id') id: string, @Body() body: UpdateProjectDto, @Request() req) {
