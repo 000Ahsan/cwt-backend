@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { FileService } from '../common/file/file.service';
 import { Prisma, User } from '@prisma/client';
@@ -42,25 +42,47 @@ export class UsersService {
 
     async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
         const user = await this.findOneById(id);
+        if (!user) throw new BadRequestException('User not found');
 
         const updateData: any = { ...data };
+
+        // Email uniqueness check
+        if (data.email && typeof data.email === 'string' && data.email !== user.email) {
+            const existingEmail = await this.findOneByEmail(data.email);
+            if (existingEmail) {
+                throw new BadRequestException('Email already in use');
+            }
+        }
 
         if (data.passwordHash && typeof data.passwordHash === 'string') {
             updateData.passwordHash = await bcrypt.hash(data.passwordHash, 10);
         }
 
-        if (data.image && typeof data.image === 'string' && data.image.startsWith('data:image')) {
-            // Delete old image if it exists
-            if (user?.image) {
-                await this.fileService.deleteFile(user.image);
+        if (data.image && typeof data.image === 'string') {
+            if (data.image.startsWith('data:image')) {
+                // Delete old image if it exists
+                if (user.image) {
+                    await this.fileService.deleteFile(user.image);
+                }
+                updateData.image = await this.fileService.saveBase64Image(data.image, 'users');
+            } else if (data.image.startsWith('/uploads/')) {
+                // Direct path from file upload
+                if (user.image && user.image !== data.image) {
+                    await this.fileService.deleteFile(user.image);
+                }
+                updateData.image = data.image;
             }
-            updateData.image = await this.fileService.saveBase64Image(data.image, 'users');
         }
 
         return this.prisma.user.update({
             where: { id },
             data: updateData,
         });
+    }
+
+    removePassword(user: User) {
+        const { passwordHash, ...rest } = user;
+        return rest;
     }
 
     async softDelete(id: string): Promise<User> {

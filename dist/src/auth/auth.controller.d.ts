@@ -1,5 +1,6 @@
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 export declare class AuthController {
     private authService;
     constructor(authService: AuthService);
@@ -20,5 +21,17 @@ export declare class AuthController {
     }>;
     logout(): Promise<{
         message: string;
+    }>;
+    updateProfile(req: any, updateProfileDto: UpdateProfileDto, file?: Express.Multer.File): Promise<{
+        name: string;
+        id: string;
+        role: import("@prisma/client").$Enums.Role;
+        email: string;
+        image: string | null;
+        categories: string | null;
+        contractorId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
     }>;
 }

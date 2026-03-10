@@ -81,6 +81,20 @@ let AuthService = class AuthService {
             access_token: await this.jwtService.signAsync(payload),
         };
     }
+    async updateProfile(userId, data, imagePath) {
+        const updateData = {
+            name: data.name,
+            email: data.email,
+        };
+        if (data.password) {
+            updateData.passwordHash = data.password;
+        }
+        if (imagePath) {
+            updateData.image = imagePath;
+        }
+        const user = await this.usersService.update(userId, updateData);
+        return this.usersService.removePassword(user);
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([

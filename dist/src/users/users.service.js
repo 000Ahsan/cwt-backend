@@ -80,20 +80,40 @@ let UsersService = class UsersService {
     }
     async update(id, data) {
         const user = await this.findOneById(id);
+        if (!user)
+            throw new common_1.BadRequestException('User not found');
         const updateData = { ...data };
+        if (data.email && typeof data.email === 'string' && data.email !== user.email) {
+            const existingEmail = await this.findOneByEmail(data.email);
+            if (existingEmail) {
+                throw new common_1.BadRequestException('Email already in use');
+            }
+        }
         if (data.passwordHash && typeof data.passwordHash === 'string') {
             updateData.passwordHash = await bcrypt.hash(data.passwordHash, 10);
         }
-        if (data.image && typeof data.image === 'string' && data.image.startsWith('data:image')) {
-            if (user?.image) {
-                await this.fileService.deleteFile(user.image);
+        if (data.image && typeof data.image === 'string') {
+            if (data.image.startsWith('data:image')) {
+                if (user.image) {
+                    await this.fileService.deleteFile(user.image);
+                }
+                updateData.image = await this.fileService.saveBase64Image(data.image, 'users');
             }
-            updateData.image = await this.fileService.saveBase64Image(data.image, 'users');
+            else if (data.image.startsWith('/uploads/')) {
+                if (user.image && user.image !== data.image) {
+                    await this.fileService.deleteFile(user.image);
+                }
+                updateData.image = data.image;
+            }
         }
         return this.prisma.user.update({
             where: { id },
             data: updateData,
         });
+    }
+    removePassword(user) {
+        const { passwordHash, ...rest } = user;
+        return rest;
     }
     async softDelete(id) {
         const user = await this.findOneById(id);

@@ -1,5 +1,6 @@
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 export declare class AuthService {
     private usersService;
     private jwtService;
@@ -17,5 +18,17 @@ export declare class AuthService {
     }>;
     refreshToken(user: any): Promise<{
         access_token: string;
+    }>;
+    updateProfile(userId: string, data: UpdateProfileDto, imagePath?: string): Promise<{
+        name: string;
+        id: string;
+        role: import("@prisma/client").$Enums.Role;
+        email: string;
+        image: string | null;
+        categories: string | null;
+        contractorId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
     }>;
 }

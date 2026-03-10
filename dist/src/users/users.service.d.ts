@@ -9,6 +9,18 @@ export declare class UsersService {
     findOneById(id: string): Promise<User | null>;
     create(data: Prisma.UserCreateInput): Promise<User>;
     update(id: string, data: Prisma.UserUpdateInput): Promise<User>;
+    removePassword(user: User): {
+        name: string;
+        id: string;
+        role: import("@prisma/client").$Enums.Role;
+        email: string;
+        image: string | null;
+        categories: string | null;
+        contractorId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
+    };
     softDelete(id: string): Promise<User>;
     findWorkersByContractor(contractorId: string): Promise<User[]>;
 }

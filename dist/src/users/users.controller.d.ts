@@ -5,55 +5,55 @@ export declare class UsersController {
     private usersService;
     constructor(usersService: UsersService);
     findAllWorkers(req: any): Promise<{
+        name: string;
         id: string;
         role: import("@prisma/client").$Enums.Role;
-        name: string;
         email: string;
         passwordHash: string;
         image: string | null;
         categories: string | null;
+        contractorId: string | null;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
-        contractorId: string | null;
     }[]>;
     createWorker(req: any, body: CreateWorkerDto): Promise<{
+        name: string;
         id: string;
         role: import("@prisma/client").$Enums.Role;
-        name: string;
         email: string;
         passwordHash: string;
         image: string | null;
         categories: string | null;
+        contractorId: string | null;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
-        contractorId: string | null;
     }>;
     updateWorker(id: string, body: UpdateWorkerDto, req: any): Promise<{
+        name: string;
         id: string;
         role: import("@prisma/client").$Enums.Role;
-        name: string;
         email: string;
         passwordHash: string;
         image: string | null;
         categories: string | null;
+        contractorId: string | null;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
-        contractorId: string | null;
     }>;
     removeWorker(id: string, req: any): Promise<{
+        name: string;
         id: string;
         role: import("@prisma/client").$Enums.Role;
-        name: string;
         email: string;
         passwordHash: string;
         image: string | null;
         categories: string | null;
+        contractorId: string | null;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
-        contractorId: string | null;
     }>;
 }
