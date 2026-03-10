@@ -48,6 +48,8 @@ model Project {
   categories      String?           // Comma-separated: e.g. "CONSTRUCTION,ROOFING"
   latitude        Float?
   longitude       Float?
+  targetHours     Float?
+  address         String?           @db.Text
   startDate       DateTime?
   endDate         DateTime?
   active          Boolean           @default(true)

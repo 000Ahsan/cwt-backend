@@ -1,7 +1,7 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { FileService } from '../common/file/file.service';
-import { Prisma, Project } from '@prisma/client';
+import { Prisma, Project, WorkLogStatus } from '@prisma/client';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 
@@ -40,6 +40,15 @@ export class ProjectsService {
                         worker: true,
                     },
                 },
+                workSessions: {
+                    where: {
+                        endTime: { not: null },
+                        workLogs: {
+                            some: { status: WorkLogStatus.APPROVED },
+                            none: { status: { not: WorkLogStatus.APPROVED } },
+                        },
+                    },
+                },
             },
         });
 
@@ -55,6 +64,15 @@ export class ProjectsService {
                         worker: true,
                     },
                 },
+                workSessions: {
+                    where: {
+                        endTime: { not: null },
+                        workLogs: {
+                            some: { status: WorkLogStatus.APPROVED },
+                            none: { status: { not: WorkLogStatus.APPROVED } },
+                        },
+                    },
+                },
             },
         });
         if (!project) throw new NotFoundException('Project not found');
@@ -62,12 +80,25 @@ export class ProjectsService {
     }
 
     private _mapProjectWithWorkers(project: any) {
-        const { assignments, ...projectData } = project;
+        const { assignments, workSessions, ...projectData } = project;
+
+        // Calculate actualHours (cumulative for the project)
+        const actualHours = workSessions.reduce((acc, session) => acc + ((session.totalMinutes || 0) / 60), 0);
+
         return {
             ...projectData,
+            actualHours: Math.round(actualHours * 100) / 100,
             workers: assignments.map(a => {
                 const { passwordHash, ...workerData } = a.worker;
-                return workerData;
+
+                // Calculate projectHours for this specific worker
+                const workerSessions = workSessions.filter(s => s.workerId === workerData.id);
+                const projectHours = workerSessions.reduce((acc, session) => acc + ((session.totalMinutes || 0) / 60), 0);
+
+                return {
+                    ...workerData,
+                    projectHours: Math.round(projectHours * 100) / 100,
+                };
             }),
         };
     }
@@ -130,11 +161,41 @@ export class ProjectsService {
         });
     }
 
-    async findAssignedProjects(workerId: string): Promise<Project[]> {
+    async findAssignedProjects(workerId: string): Promise<any> {
         const assignments = await this.prisma.projectAssignment.findMany({
             where: { workerId },
-            include: { project: true },
+            include: {
+                project: {
+                    include: {
+                        assignments: {
+                            include: {
+                                worker: true,
+                            },
+                        },
+                        workSessions: {
+                            where: {
+                                endTime: { not: null },
+                                workLogs: {
+                                    some: { status: WorkLogStatus.APPROVED },
+                                    none: { status: { not: WorkLogStatus.APPROVED } },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
         });
-        return assignments.map(a => a.project);
+
+        const projects = assignments.map(a => {
+            const mappedProject = this._mapProjectWithWorkers(a.project);
+            // Find this specific worker's entry in the mapped workers array
+            const myStats = mappedProject.workers.find(w => w.id === workerId);
+            return {
+                ...mappedProject,
+                myHours: myStats ? myStats.projectHours : 0,
+            };
+        });
+
+        return projects;
     }
 }

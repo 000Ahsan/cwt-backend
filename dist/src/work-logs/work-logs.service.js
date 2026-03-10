@@ -118,7 +118,7 @@ let WorkLogsService = class WorkLogsService {
                     workSession: {
                         include: {
                             worker: { select: { id: true, name: true, email: true } },
-                            project: { select: { id: true, name: true } },
+                            project: { select: { id: true, name: true, address: true } },
                         },
                     },
                 },

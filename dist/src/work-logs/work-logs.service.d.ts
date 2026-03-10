@@ -12,10 +12,10 @@ export declare class WorkLogsService {
         photos: {
             id: string;
             createdAt: Date;
+            workLogId: string;
             filePath: string;
             mimeType: string;
             size: number;
-            workLogId: string;
         }[];
         workSession: {
             project: {
@@ -24,20 +24,20 @@ export declare class WorkLogsService {
         } & {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
-            projectId: string;
             workerId: string;
+            projectId: string;
             startTime: Date;
             endTime: Date | null;
             totalMinutes: number | null;
             date: Date;
+            updatedAt: Date;
         };
         id: string;
-        createdAt: Date;
-        description: string;
         workSessionId: string;
+        description: string;
         status: import("@prisma/client").$Enums.WorkLogStatus;
         contractorComment: string | null;
+        createdAt: Date;
     }[]>;
     getContractorLogs(contractorId: string, filters: {
         workerId?: string;
@@ -56,38 +56,39 @@ export declare class WorkLogsService {
                 url: string;
                 id: string;
                 createdAt: Date;
+                workLogId: string;
                 filePath: string;
                 mimeType: string;
                 size: number;
-                workLogId: string;
             }[];
             workSession: {
-                project: {
-                    id: string;
-                    name: string;
-                };
                 worker: {
                     id: string;
                     name: string;
                     email: string;
                 };
+                project: {
+                    id: string;
+                    name: string;
+                    address: string | null;
+                };
             } & {
                 id: string;
                 createdAt: Date;
-                updatedAt: Date;
-                projectId: string;
                 workerId: string;
+                projectId: string;
                 startTime: Date;
                 endTime: Date | null;
                 totalMinutes: number | null;
                 date: Date;
+                updatedAt: Date;
             };
             id: string;
-            createdAt: Date;
-            description: string;
             workSessionId: string;
+            description: string;
             status: import("@prisma/client").$Enums.WorkLogStatus;
             contractorComment: string | null;
+            createdAt: Date;
         }[];
     }>;
     signOffLog(contractorId: string, logId: string, data: {
@@ -95,10 +96,10 @@ export declare class WorkLogsService {
         comment?: string;
     }): Promise<{
         id: string;
-        createdAt: Date;
-        description: string;
         workSessionId: string;
+        description: string;
         status: import("@prisma/client").$Enums.WorkLogStatus;
         contractorComment: string | null;
+        createdAt: Date;
     }>;
 }

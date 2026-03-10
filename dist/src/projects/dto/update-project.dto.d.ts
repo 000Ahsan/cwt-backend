@@ -4,6 +4,8 @@ export declare class UpdateProjectDto {
     logo?: string;
     latitude?: number;
     longitude?: number;
+    targetHours?: number;
+    address?: string;
     startDate?: string;
     endDate?: string;
     active?: boolean;

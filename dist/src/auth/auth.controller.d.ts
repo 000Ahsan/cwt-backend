@@ -23,15 +23,15 @@ export declare class AuthController {
         message: string;
     }>;
     updateProfile(req: any, updateProfileDto: UpdateProfileDto, file?: Express.Multer.File): Promise<{
-        name: string;
         id: string;
         role: import("@prisma/client").$Enums.Role;
+        name: string;
         email: string;
         image: string | null;
         categories: string | null;
-        contractorId: string | null;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
+        contractorId: string | null;
     }>;
 }

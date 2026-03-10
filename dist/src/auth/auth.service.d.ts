@@ -20,15 +20,15 @@ export declare class AuthService {
         access_token: string;
     }>;
     updateProfile(userId: string, data: UpdateProfileDto, imagePath?: string): Promise<{
-        name: string;
         id: string;
         role: import("@prisma/client").$Enums.Role;
+        name: string;
         email: string;
         image: string | null;
         categories: string | null;
-        contractorId: string | null;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
+        contractorId: string | null;
     }>;
 }
