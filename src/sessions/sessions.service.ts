@@ -74,7 +74,14 @@ export class SessionsService {
     async getWorkHistory(workerId: string): Promise<WorkSession[]> {
         return this.prisma.workSession.findMany({
             where: { workerId },
-            include: { project: true, workLogs: true },
+            include: {
+                project: true,
+                workLogs: {
+                    include: {
+                        photos: true
+                    }
+                }
+            },
             orderBy: { startTime: 'desc' },
         });
     }

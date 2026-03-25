@@ -22,20 +22,20 @@ export declare class WorkLogsController {
         } & {
             id: string;
             createdAt: Date;
-            workerId: string;
+            updatedAt: Date;
+            date: Date;
             projectId: string;
+            workerId: string;
             startTime: Date;
             endTime: Date | null;
             totalMinutes: number | null;
-            date: Date;
-            updatedAt: Date;
         };
         id: string;
-        workSessionId: string;
+        createdAt: Date;
         description: string;
         status: import("@prisma/client").$Enums.WorkLogStatus;
+        workSessionId: string;
         contractorComment: string | null;
-        createdAt: Date;
     }[]>;
     getContractorLogs(req: any, workerId?: string, projectId?: string, startDate?: string, endDate?: string, page?: string, limit?: string): Promise<{
         total: number;
@@ -53,41 +53,41 @@ export declare class WorkLogsController {
                 size: number;
             }[];
             workSession: {
-                worker: {
-                    id: string;
-                    name: string;
-                    email: string;
-                };
                 project: {
                     id: string;
                     name: string;
                     address: string | null;
                 };
+                worker: {
+                    id: string;
+                    name: string;
+                    email: string;
+                };
             } & {
                 id: string;
                 createdAt: Date;
-                workerId: string;
+                updatedAt: Date;
+                date: Date;
                 projectId: string;
+                workerId: string;
                 startTime: Date;
                 endTime: Date | null;
                 totalMinutes: number | null;
-                date: Date;
-                updatedAt: Date;
             };
             id: string;
-            workSessionId: string;
+            createdAt: Date;
             description: string;
             status: import("@prisma/client").$Enums.WorkLogStatus;
+            workSessionId: string;
             contractorComment: string | null;
-            createdAt: Date;
         }[];
     }>;
     signOff(req: any, id: string, body: SignOffWorkLogDto): Promise<{
         id: string;
-        workSessionId: string;
+        createdAt: Date;
         description: string;
         status: import("@prisma/client").$Enums.WorkLogStatus;
+        workSessionId: string;
         contractorComment: string | null;
-        createdAt: Date;
     }>;
 }

@@ -14,10 +14,10 @@ export declare class ReportsController {
             photos: {
                 id: string;
                 createdAt: Date;
+                workLogId: string;
                 filePath: string;
                 mimeType: string;
                 size: number;
-                workLogId: string;
             }[];
         } & {
             id: string;
