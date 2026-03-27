@@ -5,11 +5,13 @@ import { UsersModule } from '../users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { AttendanceModule } from '../attendance/attendance.module';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
+    AttendanceModule,
     JwtModule.register({
       global: true,
       secret: process.env.JWT_ACCESS_SECRET || 'secret',

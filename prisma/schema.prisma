@@ -18,11 +18,18 @@ enum WorkLogStatus {
   REJECTED
 }
 
+enum WorkSessionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
 model User {
   id              String            @id @default(uuid())
   role            Role              @default(WORKER)
   name            String
-  email           String            @unique
+  email           String?           @unique
+  phone           String?           @unique
   passwordHash    String
   image           String?
   categories      String?           // Comma-separated: e.g. "CONSTRUCTION,CLEANING"
@@ -32,6 +39,7 @@ model User {
   projects        Project[]         @relation("ContractorProjects")
   assignments     ProjectAssignment[]
   workSessions    WorkSession[]
+  attendances     Attendance[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   deletedAt       DateTime?
@@ -53,11 +61,24 @@ model Project {
   startDate       DateTime?
   endDate         DateTime?
   active          Boolean           @default(true)
+  isLocationBound Boolean           @default(false)
   assignments     ProjectAssignment[]
   workSessions    WorkSession[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   @@map("projects")
+}
+
+model Attendance {
+  id              String            @id @default(uuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id])
+  loginTime       DateTime          @default(now())
+  logoutTime      DateTime?
+  isAutoLogout    Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  @@map("attendances")
 }
 
 model ProjectAssignment {
@@ -77,14 +98,29 @@ model WorkSession {
   worker          User              @relation(fields: [workerId], references: [id])
   projectId       String
   project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category        String?
+  status          WorkSessionStatus @default(ACTIVE)
   startTime       DateTime          @default(now())
   endTime         DateTime?
   totalMinutes    Int?
   date            DateTime          @db.Date
   workLogs        WorkLog[]
+  pauses          WorkSessionPause[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   @@map("work_sessions")
+}
+
+model WorkSessionPause {
+  id              String            @id @default(uuid())
+  workSessionId   String
+  workSession     WorkSession       @relation(fields: [workSessionId], references: [id], onDelete: Cascade)
+  pauseTime       DateTime          @default(now())
+  resumeTime      DateTime?
+  durationMinutes Int?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  @@map("work_session_pauses")
 }
 
 model WorkLog {
@@ -109,3 +145,4 @@ model WorkPhoto {
   createdAt       DateTime          @default(now())
   @@map("work_photos")
 }
+

@@ -4,16 +4,18 @@ import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { AttendanceService } from '../attendance/attendance.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private usersService: UsersService,
         private jwtService: JwtService,
+        private attendanceService: AttendanceService,
     ) { }
 
-    async validateUser(email: string, pass: string): Promise<any> {
-        const user = await this.usersService.findOneByEmail(email);
+    async validateUser(identifier: string, pass: string): Promise<any> {
+        const user = await this.usersService.findOneByEmailOrPhone(identifier);
         if (user && (await bcrypt.compare(pass, user.passwordHash))) {
             const { passwordHash, ...result } = user;
             return result;
@@ -22,6 +24,7 @@ export class AuthService {
     }
 
     async login(user: any) {
+        await this.attendanceService.logLogin(user.id);
         const payload = { sub: user.id, email: user.email, role: user.role };
         return {
             access_token: await this.jwtService.signAsync(payload),
@@ -29,10 +32,16 @@ export class AuthService {
             user: {
                 id: user.id,
                 email: user.email,
+                phone: user.phone,
                 name: user.name,
                 role: user.role,
             },
         };
+    }
+
+    async logout(userId: string) {
+        await this.attendanceService.logLogout(userId);
+        return { message: 'Logged out successfully' };
     }
 
     async refreshToken(user: any) {
@@ -46,6 +55,7 @@ export class AuthService {
         const updateData: any = {
             name: data.name,
             email: data.email,
+            phone: data.phone,
         };
 
         if (data.password) {

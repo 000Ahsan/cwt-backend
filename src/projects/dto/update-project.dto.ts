@@ -52,6 +52,11 @@ export class UpdateProjectDto {
     @IsOptional()
     active?: boolean;
 
+    @ApiPropertyOptional({ example: false })
+    @IsBoolean()
+    @IsOptional()
+    isLocationBound?: boolean;
+
     @ApiPropertyOptional({
         example: 'CONSTRUCTION,ROOFING',
         description: 'Comma-separated list of categories e.g. CONSTRUCTION, CLEANING, ROOFING',

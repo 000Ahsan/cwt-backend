@@ -18,7 +18,7 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Login user and return JWT tokens' })
     async login(@Body() loginDto: LoginDto) {
-        const user = await this.authService.validateUser(loginDto.email, loginDto.password);
+        const user = await this.authService.validateUser(loginDto.identifier, loginDto.password);
         if (!user) {
             return { message: 'Invalid credentials' };
         }
@@ -33,9 +33,11 @@ export class AuthController {
     }
 
     @Post('logout')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
     @HttpCode(HttpStatus.OK)
-    async logout() {
-        return { message: 'Logged out successfully' };
+    async logout(@Request() req) {
+        return this.authService.logout(req.user.userId);
     }
 
     @Patch('profile')

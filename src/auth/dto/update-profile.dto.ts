@@ -12,6 +12,11 @@ export class UpdateProfileDto {
     @IsEmail()
     email?: string;
 
+    @ApiPropertyOptional({ example: '1234567890' })
+    @IsOptional()
+    @IsString()
+    phone?: string;
+
     @ApiPropertyOptional({ example: 'NewPassword123' })
     @IsOptional()
     @MinLength(6)
