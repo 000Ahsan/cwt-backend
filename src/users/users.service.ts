@@ -17,6 +17,24 @@ export class UsersService {
         });
     }
 
+    async findOneByPhone(phone: string): Promise<User | null> {
+        return this.prisma.user.findFirst({
+            where: { phone, deletedAt: null }
+        });
+    }
+
+    async findOneByEmailOrPhone(identifier: string): Promise<User | null> {
+        return this.prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email: identifier },
+                    { phone: identifier }
+                ],
+                deletedAt: null
+            }
+        });
+    }
+
     async findOneById(id: string): Promise<User | null> {
         return this.prisma.user.findFirst({
             where: { id, deletedAt: null }
@@ -51,6 +69,14 @@ export class UsersService {
             const existingEmail = await this.findOneByEmail(data.email);
             if (existingEmail) {
                 throw new BadRequestException('Email already in use');
+            }
+        }
+
+        // Phone uniqueness check
+        if (data.phone && typeof data.phone === 'string' && data.phone !== user.phone) {
+            const existingPhone = await this.findOneByPhone(data.phone);
+            if (existingPhone) {
+                throw new BadRequestException('Phone number already in use');
             }
         }
 

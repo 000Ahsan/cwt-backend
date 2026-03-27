@@ -3,8 +3,14 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateWorkerDto {
     @ApiProperty({ example: 'worker@example.com' })
+    @IsOptional()
     @IsEmail()
-    email: string;
+    email?: string;
+
+    @ApiProperty({ example: '1234567890' })
+    @IsOptional()
+    @IsString()
+    phone?: string;
 
     @ApiProperty({ example: 'John Doe' })
     @IsNotEmpty()

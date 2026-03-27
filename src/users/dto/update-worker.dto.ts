@@ -2,10 +2,13 @@ import { IsEmail, IsOptional, IsNotEmpty, MinLength, IsString } from 'class-vali
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateWorkerDto {
-    @ApiPropertyOptional({ example: 'worker@example.com' })
-    @IsEmail()
     @IsOptional()
     email?: string;
+
+    @ApiPropertyOptional({ example: '1234567890' })
+    @IsOptional()
+    @IsString()
+    phone?: string;
 
     @ApiPropertyOptional({ example: 'John Doe' })
     @IsNotEmpty()

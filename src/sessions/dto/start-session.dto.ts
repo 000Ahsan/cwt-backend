@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsUUID, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class StartSessionDto {
@@ -6,4 +6,9 @@ export class StartSessionDto {
     @IsUUID()
     @IsNotEmpty()
     projectId: string;
+
+    @ApiProperty({ example: 'CONSTRUCTION' })
+    @IsString()
+    @IsNotEmpty()
+    category: string;
 }
