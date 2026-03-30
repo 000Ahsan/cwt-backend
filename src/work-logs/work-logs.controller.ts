@@ -60,9 +60,30 @@ export class WorkLogsController {
 
     @Get('worker')
     @Roles(Role.WORKER)
-    @ApiOperation({ summary: 'Get work logs for the current worker' })
-    async getWorkerLogs(@Request() req) {
-        return this.workLogsService.getWorkerLogs(req.user.userId);
+    @ApiOperation({ summary: 'Get work logs for the current worker with filters' })
+    @ApiQuery({ name: 'projectId', required: false, type: String })
+    @ApiQuery({ name: 'category', required: false, type: String })
+    @ApiQuery({ name: 'startDate', required: false, type: String })
+    @ApiQuery({ name: 'endDate', required: false, type: String })
+    @ApiQuery({ name: 'page', required: false, type: Number })
+    @ApiQuery({ name: 'limit', required: false, type: Number })
+    async getWorkerLogs(
+        @Request() req,
+        @Query('projectId') projectId?: string,
+        @Query('category') category?: string,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string,
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+    ) {
+        return this.workLogsService.getWorkerLogs(req.user.userId, {
+            projectId,
+            category,
+            startDate,
+            endDate,
+            page: page ? parseInt(page, 10) : undefined,
+            limit: limit ? parseInt(limit, 10) : undefined,
+        });
     }
 
     @Get('contractor')

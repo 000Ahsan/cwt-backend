@@ -151,6 +151,11 @@ export class SessionsService {
         });
     }
 
+    async restartSession(workerId: string, projectId: string, category: string): Promise<WorkSession> {
+        // This is effectively a proxy to startSession but explicitly named for frontend clarity
+        return this.startSession(workerId, projectId, category);
+    }
+
     async getWorkHistory(workerId: string): Promise<WorkSession[]> {
         return this.prisma.workSession.findMany({
             where: { workerId },
