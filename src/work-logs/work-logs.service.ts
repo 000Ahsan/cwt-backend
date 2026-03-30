@@ -51,36 +51,73 @@ export class WorkLogsService {
         };
     }
 
-    async getWorkerLogs(workerId: string) {
-        const logs = await this.prisma.workLog.findMany({
-            where: {
-                workSession: {
-                    workerId: workerId,
-                },
+    async getWorkerLogs(
+        workerId: string,
+        filters: {
+            projectId?: string;
+            category?: string;
+            startDate?: string;
+            endDate?: string;
+            page?: number;
+            limit?: number;
+        } = {},
+    ) {
+        const { projectId, category, startDate, endDate } = filters;
+        const page = Math.max(1, filters.page ?? 1);
+        const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
+        const skip = (page - 1) * limit;
+
+        const where: any = {
+            workSession: {
+                workerId: workerId,
+                ...(projectId && { projectId }),
+                ...(category && { category }),
+                ...(startDate || endDate
+                    ? {
+                        date: {
+                            ...(startDate && { gte: new Date(startDate) }),
+                            ...(endDate && { lte: new Date(endDate) }),
+                        },
+                    }
+                    : {}),
             },
-            include: {
-                workSession: {
-                    include: {
-                        project: {
-                            select: {
-                                name: true,
+        };
+
+        const [total, logs] = await Promise.all([
+            this.prisma.workLog.count({ where }),
+            this.prisma.workLog.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    workSession: {
+                        include: {
+                            project: {
+                                select: {
+                                    name: true,
+                                },
                             },
                         },
                     },
+                    photos: true,
                 },
-                photos: true,
-            },
-            orderBy: {
-                createdAt: 'desc',
-            },
-        });
+            }),
+        ]);
 
-        return logs.map(log => ({
-            ...log,
-            photos: log.photos.map(photo => ({
-                ...photo,
+        return {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            data: logs.map(log => ({
+                ...log,
+                photos: log.photos.map(photo => ({
+                    ...photo,
+                    url: photo.filePath.replace('./', '/').replace(/\\/g, '/'),
+                })),
             })),
-        }));
+        };
     }
 
     async getContractorLogs(

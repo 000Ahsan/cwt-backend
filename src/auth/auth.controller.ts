@@ -27,9 +27,9 @@ export class AuthController {
 
     @Post('refresh')
     @HttpCode(HttpStatus.OK)
-    async refresh(@Request() req) {
-        // Basic implementation for now, in production should validate refresh token from body or cookie
-        return this.authService.refreshToken(req.user);
+    @ApiOperation({ summary: 'Refresh access token using refresh token' })
+    async refresh(@Body('refresh_token') refreshToken: string) {
+        return this.authService.refreshToken(refreshToken);
     }
 
     @Post('logout')

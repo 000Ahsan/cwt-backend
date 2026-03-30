@@ -28,7 +28,10 @@ export class AuthService {
         const payload = { sub: user.id, email: user.email, role: user.role };
         return {
             access_token: await this.jwtService.signAsync(payload),
-            refresh_token: await this.jwtService.signAsync(payload, { expiresIn: '7d' }),
+            refresh_token: await this.jwtService.signAsync(payload, { 
+                expiresIn: '7d',
+                secret: process.env.JWT_REFRESH_SECRET || 'refresh_secret' 
+            }),
             user: {
                 id: user.id,
                 email: user.email,
@@ -44,11 +47,18 @@ export class AuthService {
         return { message: 'Logged out successfully' };
     }
 
-    async refreshToken(user: any) {
-        const payload = { sub: user.sub, email: user.email, role: user.role };
-        return {
-            access_token: await this.jwtService.signAsync(payload),
-        };
+    async refreshToken(token: string) {
+        try {
+            const payload = await this.jwtService.verifyAsync(token, {
+                secret: process.env.JWT_REFRESH_SECRET || 'refresh_secret',
+            });
+            const newPayload = { sub: payload.sub, email: payload.email, role: payload.role };
+            return {
+                access_token: await this.jwtService.signAsync(newPayload),
+            };
+        } catch (e) {
+            throw new UnauthorizedException('Invalid refresh token');
+        }
     }
 
     async updateProfile(userId: string, data: UpdateProfileDto, imagePath?: string) {
