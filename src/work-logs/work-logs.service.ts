@@ -29,9 +29,9 @@ export class WorkLogsService {
                 await this.prisma.workPhoto.create({
                     data: {
                         workLogId: workLog.id,
-                        filePath: photo.path.replace(/\\/g, '/'),
-                        mimeType: photo.mimetype,
-                        size: photo.size,
+                        filePath: photo.secure_url,
+                        mimeType: photo.resource_type + '/' + photo.format,
+                        size: photo.bytes,
                     },
                 });
             }
@@ -114,7 +114,7 @@ export class WorkLogsService {
                 ...log,
                 photos: log.photos.map(photo => ({
                     ...photo,
-                    url: photo.filePath.replace('./', '/').replace(/\\/g, '/'),
+                    url: photo.filePath,
                 })),
             })),
         };
@@ -180,7 +180,7 @@ export class WorkLogsService {
                 ...log,
                 photos: log.photos.map(photo => ({
                     ...photo,
-                    url: photo.filePath.replace('./', '/').replace(/\\/g, '/'),
+                    url: photo.filePath,
                 })),
             })),
         };

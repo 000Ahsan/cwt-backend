@@ -2,9 +2,10 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+
 import { json, urlencoded } from 'express';
 
-export async function createApp() {
+async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(json({ limit: '50mb' }));
@@ -34,15 +35,6 @@ export async function createApp() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 
-  await app.init(); // Required for serverless
-  return app;
+  await app.listen(process.env.PORT ?? 3000);
 }
-
-// Local development logic
-if (process.env.NODE_ENV !== 'production') {
-  async function bootstrap() {
-    const app = await createApp();
-    await app.listen(process.env.PORT ?? 3000);
-  }
-  bootstrap();
-}
+bootstrap();

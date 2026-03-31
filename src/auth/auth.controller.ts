@@ -5,14 +5,16 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { v4 as uuidv4 } from 'uuid';
-import * as path from 'path';
+import { memoryStorage } from 'multer';
+import { CloudinaryService } from '../common/cloudinary/cloudinary.service';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-    constructor(private authService: AuthService) { }
+    constructor(
+        private authService: AuthService,
+        private cloudinaryService: CloudinaryService
+    ) { }
 
     @Post('login')
     @HttpCode(HttpStatus.OK)
@@ -46,19 +48,7 @@ export class AuthController {
     @ApiConsumes('multipart/form-data')
     @ApiOperation({ summary: 'Update authenticated user profile' })
     @UseInterceptors(FileInterceptor('image', {
-        storage: diskStorage({
-            destination: (req, file, cb) => {
-                const uploadDir = './uploads/users';
-                if (!require('fs').existsSync(uploadDir)) {
-                    require('fs').mkdirSync(uploadDir, { recursive: true });
-                }
-                cb(null, uploadDir);
-            },
-            filename: (req, file, cb) => {
-                const uniqueSuffix = uuidv4();
-                cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
-            },
-        }),
+        storage: memoryStorage(),
         fileFilter: (req, file, cb) => {
             if (!file.mimetype.match(/\/(jpg|jpeg|png)$/)) {
                 return cb(new Error('Only image files (jpg/png) are allowed!'), false);
@@ -72,7 +62,11 @@ export class AuthController {
         @Body() updateProfileDto: UpdateProfileDto,
         @UploadedFile() file?: Express.Multer.File,
     ) {
-        const imagePath = file ? `/uploads/users/${file.filename}` : undefined;
-        return this.authService.updateProfile(req.user.userId, updateProfileDto, imagePath);
+        let imageUrl = undefined;
+        if (file) {
+            const result = await this.cloudinaryService.uploadFile(file);
+            imageUrl = result.secure_url;
+        }
+        return this.authService.updateProfile(req.user.userId, updateProfileDto, imageUrl);
     }
 }
