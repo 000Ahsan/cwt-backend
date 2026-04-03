@@ -33,4 +33,8 @@ export class UpdateWorkerDto {
     @IsArray()
     @IsUUID('all', { each: true })
     workCategoryIds?: string[];
+
+    @ApiPropertyOptional({ example: 25.5 })
+    @IsOptional()
+    defaultHourlyRate?: number;
 }

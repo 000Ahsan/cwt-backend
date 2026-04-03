@@ -12,6 +12,7 @@ import { WorkCategoriesModule } from './work-categories/work-categories.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { join } from 'path';
     WorkLogsModule,
     WorkCategoriesModule,
     AttendanceModule,
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

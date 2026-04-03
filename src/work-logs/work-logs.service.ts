@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { WorkLog, WorkPhoto, WorkLogStatus } from '@prisma/client';
+import { WorkLog, WorkPhoto, WorkLogStatus, BillingType, BillingStatus } from '@prisma/client';
 import * as path from 'path';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
@@ -205,12 +205,46 @@ export class WorkLogsService {
             throw new ForbiddenException('You do not have permission to sign off this work log');
         }
 
-        return this.prisma.workLog.update({
+        const updatedLog = await this.prisma.workLog.update({
             where: { id: logId },
             data: {
                 status: data.status,
                 contractorComment: data.comment,
             },
         });
+
+        // Automatically generate project billing when approved
+        if (data.status === WorkLogStatus.APPROVED) {
+            // Check if billing already exists for this work log
+            const existingBilling = await this.prisma.billing.findUnique({
+                where: { workLogId: logId }
+            });
+
+            if (!existingBilling && log.workSession.totalMinutes != null) {
+                const hours = log.workSession.totalMinutes / 60;
+                const hourlyRate = log.workSession.hourlyRateAtTime || 0;
+                const amount = hours * hourlyRate;
+
+                // Ensure greater than 0 hours maybe? We allow 0 if rate is 0.
+                if (hours > 0) {
+                    await this.prisma.billing.create({
+                        data: {
+                            workerId: log.workSession.workerId,
+                            projectId: log.workSession.projectId,
+                            workLogId: logId,
+                            workCategoryId: log.workSession.workCategoryId,
+                            billingType: BillingType.PROJECT,
+                            hours,
+                            hourlyRate,
+                            amount,
+                            status: BillingStatus.DUE,
+                            date: new Date() // Record the date of billing creation
+                        }
+                    });
+                }
+            }
+        }
+
+        return updatedLog;
     }
 }
