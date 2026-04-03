@@ -125,13 +125,14 @@ export class WorkLogsService {
         filters: {
             workerId?: string;
             projectId?: string;
+            category?: string;
             startDate?: string;
             endDate?: string;
             page?: number;
             limit?: number;
         },
     ) {
-        const { workerId, projectId, startDate, endDate } = filters;
+        const { workerId, projectId, category, startDate, endDate } = filters;
         const page = Math.max(1, filters.page ?? 1);
         const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
         const skip = (page - 1) * limit;
@@ -141,6 +142,7 @@ export class WorkLogsService {
                 project: { contractorId },
                 ...(workerId && { workerId }),
                 ...(projectId && { projectId }),
+                ...(category && { category }),
                 ...(startDate || endDate
                     ? {
                         date: {
@@ -163,6 +165,7 @@ export class WorkLogsService {
                     photos: true,
                     workSession: {
                         include: {
+                            workCategory: { select: { id: true, name: true } },
                             worker: { select: { id: true, name: true, email: true } },
                             project: { select: { id: true, name: true, address: true } },
                         },

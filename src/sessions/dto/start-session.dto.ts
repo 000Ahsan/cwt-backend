@@ -7,8 +7,8 @@ export class StartSessionDto {
     @IsNotEmpty()
     projectId: string;
 
-    @ApiProperty({ example: 'CONSTRUCTION' })
-    @IsString()
+    @ApiProperty({ example: 'work-category-uuid-here' })
+    @IsUUID()
     @IsNotEmpty()
-    category: string;
+    workCategoryId: string;
 }

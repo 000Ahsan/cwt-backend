@@ -8,6 +8,8 @@ import { ProjectsModule } from './projects/projects.module';
 import { ReportsModule } from './reports/reports.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { WorkLogsModule } from './work-logs/work-logs.module';
+import { WorkCategoriesModule } from './work-categories/work-categories.module';
+import { AttendanceModule } from './attendance/attendance.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
@@ -24,6 +26,8 @@ import { join } from 'path';
     ReportsModule,
     SessionsModule,
     WorkLogsModule,
+    WorkCategoriesModule,
+    AttendanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

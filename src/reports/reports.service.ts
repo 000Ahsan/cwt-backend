@@ -18,6 +18,7 @@ export class ReportsService {
             include: {
                 worker: { select: { name: true, email: true } },
                 project: { select: { name: true } },
+                workCategory: { select: { name: true } },
                 workLogs: { include: { photos: true } },
             },
             orderBy: { startTime: 'asc' },
@@ -36,6 +37,7 @@ export class ReportsService {
             include: {
                 worker: { select: { id: true, name: true } },
                 project: { select: { id: true, name: true } },
+                workCategory: { select: { name: true } },
             },
             orderBy: { startTime: 'asc' },
         });

@@ -38,8 +38,8 @@ model User {
   contractor      User?             @relation("ContractorToWorker", fields: [contractorId], references: [id])
   workers         User[]            @relation("ContractorToWorker")
   projects        Project[]         @relation("ContractorProjects")
-  managedCategories WorkCategory[]  @relation("MgrCat")
-  workCategoryLinks UserWorkCategory[]
+  managedCategories WorkCategory[]  @relation("ContractorWorkCategories")
+  workCategories    WorkCategory[]  @relation("WorkerWorkCategories")
   assignments     ProjectAssignment[]
   workSessions    WorkSession[]
   attendances     Attendance[]
@@ -65,7 +65,7 @@ model Project {
   endDate         DateTime?
   active          Boolean           @default(true)
   isLocationBound Boolean           @default(false)
-  workCategoryLinks ProjectWorkCategory[]
+  workCategories  WorkCategory[]    @relation("ProjectWorkCategories")
   assignments     ProjectAssignment[]
   workSessions    WorkSession[]
   createdAt       DateTime          @default(now())
@@ -156,36 +156,16 @@ model WorkPhoto {
 model WorkCategory {
   id              String            @id @default(uuid())
   contractorId    String
-  contractor      User              @relation("MgrCat", fields: [contractorId], references: [id])
+  contractor      User              @relation("ContractorWorkCategories", fields: [contractorId], references: [id])
   name            String
   hourlyRate      Float             @default(0)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
-  projectLinks    ProjectWorkCategory[]
-  workerLinks      UserWorkCategory[]
+  projects        Project[]         @relation("ProjectWorkCategories")
+  workers         User[]            @relation("WorkerWorkCategories")
   workSessions    WorkSession[]
 
   @@unique([contractorId, name])
   @@map("work_categories")
-}
-
-model UserWorkCategory {
-  userId          String
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workCategoryId  String
-  workCategory    WorkCategory      @relation(fields: [workCategoryId], references: [id], onDelete: Cascade)
-
-  @@id([userId, workCategoryId])
-  @@map("user_work_categories")
-}
-
-model ProjectWorkCategory {
-  projectId       String
-  project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  workCategoryId  String
-  workCategory    WorkCategory      @relation(fields: [workCategoryId], references: [id], onDelete: Cascade)
-
-  @@id([projectId, workCategoryId])
-  @@map("project_work_categories")
 }
 

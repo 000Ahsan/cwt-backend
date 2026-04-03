@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, MinLength, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, MinLength, IsString, IsArray, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateWorkerDto {
@@ -27,10 +27,11 @@ export class CreateWorkerDto {
     image?: string;
 
     @ApiPropertyOptional({
-        example: 'CONSTRUCTION,CLEANING',
-        description: 'Comma-separated list of categories e.g. CONSTRUCTION, CLEANING, ROOFING',
+        example: ['uuid-1', 'uuid-2'],
+        description: 'Array of WorkCategory IDs',
     })
     @IsOptional()
-    @IsString()
-    categories?: string;
+    @IsArray()
+    @IsUUID('all', { each: true })
+    workCategoryIds?: string[];
 }

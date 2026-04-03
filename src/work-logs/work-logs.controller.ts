@@ -79,6 +79,7 @@ export class WorkLogsController {
     @ApiOperation({ summary: 'Get all work logs for the contractor with filters and pagination' })
     @ApiQuery({ name: 'workerId', required: false, type: String, description: 'Filter by worker ID' })
     @ApiQuery({ name: 'projectId', required: false, type: String, description: 'Filter by project ID' })
+    @ApiQuery({ name: 'category', required: false, type: String, description: 'Filter by work category name' })
     @ApiQuery({ name: 'startDate', required: false, type: String, example: '2026-03-01', description: 'Start of date range (inclusive)' })
     @ApiQuery({ name: 'endDate', required: false, type: String, example: '2026-03-31', description: 'End of date range (inclusive)' })
     @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number (default: 1)' })
@@ -87,6 +88,7 @@ export class WorkLogsController {
         @Request() req,
         @Query('workerId') workerId?: string,
         @Query('projectId') projectId?: string,
+        @Query('category') category?: string,
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string,
         @Query('page') page?: string,
@@ -95,6 +97,7 @@ export class WorkLogsController {
         return this.workLogsService.getContractorLogs(req.user.userId, {
             workerId,
             projectId,
+            category,
             startDate,
             endDate,
             page: page ? parseInt(page, 10) : undefined,

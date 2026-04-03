@@ -13,7 +13,7 @@ export class ProjectsService {
     ) { }
 
     async create(contractorId: string, data: CreateProjectDto): Promise<Project> {
-        const { startDate, endDate, logo, ...rest } = data;
+        const { startDate, endDate, logo, workCategoryIds, ...rest } = data;
 
         let logoPath = logo;
         if (logo && logo.startsWith('data:image')) {
@@ -27,6 +27,9 @@ export class ProjectsService {
                 logo: logoPath,
                 startDate: startDate ? new Date(startDate) : undefined,
                 endDate: endDate ? new Date(endDate) : undefined,
+                workCategoryLinks: workCategoryIds ? {
+                    create: workCategoryIds.map(id => ({ workCategoryId: id }))
+                } : undefined,
             },
         });
     }
@@ -49,6 +52,11 @@ export class ProjectsService {
                         },
                     },
                 },
+                workCategoryLinks: {
+                    include: {
+                        workCategory: true
+                    }
+                }
             },
         });
 
@@ -73,6 +81,11 @@ export class ProjectsService {
                         },
                     },
                 },
+                workCategoryLinks: {
+                    include: {
+                        workCategory: true
+                    }
+                }
             },
         });
         if (!project) throw new NotFoundException('Project not found');
@@ -80,7 +93,7 @@ export class ProjectsService {
     }
 
     private _mapProjectWithWorkers(project: any) {
-        const { assignments, workSessions, ...projectData } = project;
+        const { assignments, workSessions, workCategoryLinks, ...projectData } = project;
 
         // Calculate actualHours (cumulative for the project)
         const actualHours = workSessions.reduce((acc, session) => acc + ((session.totalMinutes || 0) / 60), 0);
@@ -88,6 +101,7 @@ export class ProjectsService {
         return {
             ...projectData,
             actualHours: Math.round(actualHours * 100) / 100,
+            categories: workCategoryLinks?.map(link => link.workCategory) || [],
             workers: assignments.map(a => {
                 const { passwordHash, ...workerData } = a.worker;
 
@@ -107,7 +121,7 @@ export class ProjectsService {
         // Ensure ownership
         const project = await this.findOne(id, contractorId);
 
-        const { startDate, endDate, logo, ...rest } = data;
+        const { startDate, endDate, logo, workCategoryIds, ...rest } = data;
 
         let logoPath = logo;
         if (logo && logo.startsWith('data:image')) {
@@ -125,6 +139,10 @@ export class ProjectsService {
                 logo: logoPath,
                 startDate: startDate ? new Date(startDate) : undefined,
                 endDate: endDate ? new Date(endDate) : undefined,
+                workCategoryLinks: workCategoryIds ? {
+                    deleteMany: {},
+                    create: workCategoryIds.map(catId => ({ workCategoryId: catId }))
+                } : undefined,
             },
         });
     }
@@ -181,6 +199,11 @@ export class ProjectsService {
                                 },
                             },
                         },
+                        workCategoryLinks: {
+                            include: {
+                                workCategory: true
+                            }
+                        }
                     },
                 },
             },

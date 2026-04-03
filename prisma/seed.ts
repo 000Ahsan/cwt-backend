@@ -10,9 +10,12 @@ async function main() {
     // Ordered to avoid foreign key constraint issues
     await prisma.workPhoto.deleteMany();
     await prisma.workLog.deleteMany();
+    await prisma.projectWorkCategory.deleteMany();
+    await prisma.userWorkCategory.deleteMany();
     await prisma.workSession.deleteMany();
     await prisma.projectAssignment.deleteMany();
     await prisma.project.deleteMany();
+    await prisma.workCategory.deleteMany();
     await prisma.user.deleteMany();
 
     const saltRounds = 10;
@@ -30,7 +33,26 @@ async function main() {
 
     console.log('Created Contractor:', contractor.email);
 
-    // 2. Create Workers
+    // 2. Create WorkCategories
+    const cat1 = await prisma.workCategory.create({
+        data: {
+            name: 'CONSTRUCTION',
+            hourlyRate: 50,
+            contractorId: contractor.id
+        }
+    });
+
+    const cat2 = await prisma.workCategory.create({
+        data: {
+            name: 'PLUMBING',
+            hourlyRate: 60,
+            contractorId: contractor.id
+        }
+    });
+
+    console.log('Created WorkCategories:', cat1.name, ',', cat2.name);
+
+    // 3. Create Workers
     const worker1 = await prisma.user.create({
         data: {
             email: 'worker1@example.com',
@@ -38,6 +60,12 @@ async function main() {
             passwordHash: passwordHash,
             role: Role.WORKER,
             contractorId: contractor.id,
+            workCategoryLinks: {
+                create: [
+                    { workCategoryId: cat1.id },
+                    { workCategoryId: cat2.id }
+                ]
+            }
         },
     });
 
@@ -48,23 +76,34 @@ async function main() {
             passwordHash: passwordHash,
             role: Role.WORKER,
             contractorId: contractor.id,
+            workCategoryLinks: {
+                create: [
+                    { workCategoryId: cat1.id }
+                ]
+            }
         },
     });
 
     console.log('Created Workers:', worker1.email, ',', worker2.email);
 
-    // 3. Create a Project
+    // 4. Create a Project
     const project = await prisma.project.create({
         data: {
             name: 'Main Construction Site',
             description: 'The primary project for testing',
             contractorId: contractor.id,
+            workCategoryLinks: {
+                create: [
+                    { workCategoryId: cat1.id },
+                    { workCategoryId: cat2.id }
+                ]
+            }
         },
     });
 
     console.log('Created Project:', project.name);
 
-    // 4. Assign Workers to Project
+    // 5. Assign Workers to Project
     await prisma.projectAssignment.createMany({
         data: [
             { projectId: project.id, workerId: worker1.id },

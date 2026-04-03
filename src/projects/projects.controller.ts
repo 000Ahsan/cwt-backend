@@ -35,6 +35,13 @@ export class ProjectsController {
         return [];
     }
 
+    @Get('worker-assignments')
+    @Roles(Role.WORKER)
+    @ApiOperation({ summary: 'Get projects assigned to the logged-in worker' })
+    async getWorkerAssignments(@Request() req) {
+        return this.projectsService.findAssignedProjects(req.user.userId);
+    }
+
     @Patch(':id')
     @Roles(Role.CONTRACTOR)
     @ApiOperation({ summary: 'Update an existing project' })

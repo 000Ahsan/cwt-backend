@@ -6,7 +6,7 @@ import { WorkSession, WorkLogStatus, WorkSessionStatus } from '@prisma/client';
 export class SessionsService {
     constructor(private prisma: PrismaService) { }
 
-    async startSession(workerId: string, projectId: string, category: string): Promise<WorkSession> {
+    async startSession(workerId: string, projectId: string, workCategoryId: string): Promise<WorkSession> {
         // Check if there is already an active or paused session
         const activeSession = await this.prisma.workSession.findFirst({
             where: {
@@ -29,27 +29,33 @@ export class SessionsService {
         });
         if (!assignment) throw new BadRequestException('You are not assigned to this project');
 
+        const category = await this.prisma.workCategory.findUnique({
+            where: { id: workCategoryId },
+        });
+        if (!category) throw new BadRequestException('Invalid work category');
+
         // Check for unsigned-off / rejected work logs for this project in the SAME category
         const pendingLogs = await this.prisma.workLog.findFirst({
             where: {
                 workSession: {
                     workerId,
                     projectId,
-                    category,
+                    workCategoryId,
                 },
                 status: WorkLogStatus.PENDING,
             },
         });
 
         if (pendingLogs) {
-            throw new BadRequestException(`You have pending work logs for this project in the "${category}" category that must be signed off before starting a new session in this category.`);
+            throw new BadRequestException(`You have pending work logs for this project in the "${category.name}" category that must be signed off before starting a new session in this category.`);
         }
 
         return this.prisma.workSession.create({
             data: {
                 workerId,
                 projectId,
-                category,
+                workCategoryId,
+                hourlyRateAtTime: category.hourlyRate,
                 status: WorkSessionStatus.ACTIVE,
                 startTime: new Date(),
                 date: new Date(),
@@ -151,9 +157,9 @@ export class SessionsService {
         });
     }
 
-    async restartSession(workerId: string, projectId: string, category: string): Promise<WorkSession> {
+    async restartSession(workerId: string, projectId: string, workCategoryId: string): Promise<WorkSession> {
         // This is effectively a proxy to startSession but explicitly named for frontend clarity
-        return this.startSession(workerId, projectId, category);
+        return this.startSession(workerId, projectId, workCategoryId);
     }
 
     async getWorkHistory(workerId: string): Promise<WorkSession[]> {
@@ -161,6 +167,7 @@ export class SessionsService {
             where: { workerId },
             include: {
                 project: true,
+                workCategory: true,
                 workLogs: {
                     include: {
                         photos: true
