@@ -50,8 +50,13 @@ export class AuthController {
     @UseInterceptors(FileInterceptor('image', {
         storage: memoryStorage(),
         fileFilter: (req, file, cb) => {
-            if (!file.mimetype.match(/\/(jpg|jpeg|png)$/)) {
-                return cb(new Error('Only image files (jpg/png) are allowed!'), false);
+            console.log('--- Incoming File Info (Auth) ---');
+            console.log('MimeType:', file.mimetype);
+            console.log('FileName:', file.originalname);
+            console.log('---');
+            
+            if (!file.mimetype || !file.mimetype.startsWith('image/')) {
+                return cb(new Error(`Only image files are allowed! Mimetype was: ${file.mimetype}`), false);
             }
             cb(null, true);
         },

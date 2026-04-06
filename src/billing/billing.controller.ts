@@ -6,6 +6,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { GenerateContractorBillingDto } from './dto/generate-contractor-billing.dto';
+import { BillingFilterDto } from './dto/billing-filter.dto';
 
 @ApiTags('Billing')
 @ApiBearerAuth()
@@ -17,15 +18,29 @@ export class BillingController {
   @Get()
   @Roles(Role.CONTRACTOR)
   @ApiOperation({ summary: 'Get billing records' })
-  async getBillingRecords(@Request() req, @Query() query) {
+  async getBillingRecords(@Request() req, @Query() query: BillingFilterDto) {
     return this.billingService.getBillingRecords(req.user.userId, query);
   }
 
   @Get('stats')
   @Roles(Role.CONTRACTOR)
   @ApiOperation({ summary: 'Get billing stats' })
-  async getStats(@Request() req) {
-    return this.billingService.getStats(req.user.userId);
+  async getStats(@Request() req, @Query() query: BillingFilterDto) {
+    return this.billingService.getStats(req.user.userId, query);
+  }
+
+  @Get('worker')
+  @Roles(Role.WORKER)
+  @ApiOperation({ summary: 'Get worker billing records' })
+  async getWorkerBillings(@Request() req, @Query() query: BillingFilterDto) {
+    return this.billingService.getWorkerBillings(req.user.userId, query);
+  }
+
+  @Get('worker/stats')
+  @Roles(Role.WORKER)
+  @ApiOperation({ summary: 'Get worker billing stats' })
+  async getWorkerStats(@Request() req, @Query() query: BillingFilterDto) {
+    return this.billingService.getWorkerStats(req.user.userId, query);
   }
 
   @Patch(':id/pay')

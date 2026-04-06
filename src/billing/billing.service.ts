@@ -10,19 +10,20 @@ export class BillingService {
     async getBillingRecords(contractorId: string, filters: any) {
         const { workerId, projectId, status, billingType, startDate, endDate, page = 1, limit = 20 } = filters;
         
-        const where: Prisma.BillingWhereInput = {
-            worker: { contractorId },
-            ...(workerId && { workerId }),
-            ...(projectId && { projectId }),
-            ...(status && { status }),
-            ...(billingType && { billingType }),
-            ...(startDate || endDate ? {
-                date: {
-                    ...(startDate && { gte: new Date(startDate) }),
-                    ...(endDate && { lte: new Date(endDate) }),
-                }
-            } : {})
+        const where: any = {
+            worker: { contractorId: contractorId }
         };
+
+        if (workerId) where.workerId = workerId;
+        if (projectId) where.projectId = projectId;
+        if (status) where.status = status;
+        if (billingType) where.billingType = billingType;
+
+        if (startDate || endDate) {
+            where.date = {};
+            if (startDate) where.date.gte = new Date(startDate);
+            if (endDate) where.date.lte = new Date(endDate);
+        }
 
         const skip = (page - 1) * limit;
 
@@ -50,11 +51,31 @@ export class BillingService {
         };
     }
 
-    async getStats(contractorId: string) {
-        const stats = await this.prisma.billing.groupBy({
-            by: ['status', 'billingType'],
-            where: { worker: { contractorId } },
-            _sum: { amount: true }
+    async getStats(contractorId: string, filters: any = {}) {
+        const { workerId, projectId, status, billingType, startDate, endDate } = filters;
+        
+        const where: any = {
+            worker: { contractorId: contractorId }
+        };
+
+        if (workerId) where.workerId = workerId;
+        if (projectId) where.projectId = projectId;
+        if (status) where.status = status;
+        if (billingType) where.billingType = billingType;
+
+        if (startDate || endDate) {
+            where.date = {};
+            if (startDate) where.date.gte = new Date(startDate);
+            if (endDate) where.date.lte = new Date(endDate);
+        }
+
+        const billings = await this.prisma.billing.findMany({
+            where,
+            select: {
+                amount: true,
+                status: true,
+                billingType: true
+            }
         });
 
         let totalDue = 0;
@@ -62,13 +83,13 @@ export class BillingService {
         let totalProjectBilling = 0;
         let totalContractorBilling = 0;
 
-        for (const stat of stats) {
-            const amount = stat._sum.amount || 0;
-            if (stat.status === BillingStatus.DUE) totalDue += amount;
-            if (stat.status === BillingStatus.PAID) totalPaid += amount;
+        for (const billing of billings) {
+            const amount = billing.amount || 0;
+            if (billing.status === BillingStatus.DUE) totalDue += amount;
+            if (billing.status === BillingStatus.PAID) totalPaid += amount;
             
-            if (stat.billingType === BillingType.PROJECT) totalProjectBilling += amount;
-            if (stat.billingType === BillingType.CONTRACTOR) totalContractorBilling += amount;
+            if (billing.billingType === BillingType.PROJECT) totalProjectBilling += amount;
+            if (billing.billingType === BillingType.CONTRACTOR) totalContractorBilling += amount;
         }
 
         return {
@@ -182,5 +203,91 @@ export class BillingService {
                 date: date
             }
         });
+    }
+
+    async getWorkerBillings(workerId: string, filters: any) {
+        const { projectId, status, billingType, startDate, endDate, page = 1, limit = 20 } = filters;
+        
+        const where: any = {
+            workerId: workerId
+        };
+
+        if (projectId) where.projectId = projectId;
+        if (status) where.status = status;
+        if (billingType) where.billingType = billingType;
+
+        if (startDate || endDate) {
+            where.date = {};
+            if (startDate) where.date.gte = new Date(startDate);
+            if (endDate) where.date.lte = new Date(endDate);
+        }
+
+        const skip = (page - 1) * limit;
+
+        const [total, data] = await Promise.all([
+            this.prisma.billing.count({ where }),
+            this.prisma.billing.findMany({
+                where,
+                include: {
+                    project: { select: { id: true, name: true } },
+                    workCategory: { select: { id: true, name: true } },
+                },
+                skip,
+                take: Number(limit),
+                orderBy: { date: 'desc' }
+            })
+        ]);
+
+        return {
+            total,
+            page: Number(page),
+            limit: Number(limit),
+            totalPages: Math.ceil(total / limit),
+            data
+        };
+    }
+
+    async getWorkerStats(workerId: string, filters: any = {}) {
+        const { projectId, status, billingType, startDate, endDate } = filters;
+        
+        const where: any = {
+            workerId: workerId
+        };
+
+        if (projectId) where.projectId = projectId;
+        if (status) where.status = status;
+        if (billingType) where.billingType = billingType;
+
+        if (startDate || endDate) {
+            where.date = {};
+            if (startDate) where.date.gte = new Date(startDate);
+            if (endDate) where.date.lte = new Date(endDate);
+        }
+
+        const billings = await this.prisma.billing.findMany({
+            where,
+            select: {
+                amount: true,
+                status: true,
+                billingType: true
+            }
+        });
+
+        let totalDue = 0;
+        let totalPaid = 0;
+        let totalBillings = 0;
+
+        for (const billing of billings) {
+            const amount = billing.amount || 0;
+            totalBillings += amount;
+            if (billing.status === BillingStatus.DUE) totalDue += amount;
+            if (billing.status === BillingStatus.PAID) totalPaid += amount;
+        }
+
+        return {
+            totalDue,
+            totalPaid,
+            totalBillings
+        };
     }
 }

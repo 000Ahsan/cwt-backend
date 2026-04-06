@@ -7,11 +7,11 @@ import { Role } from '@prisma/client';
 
 @Controller('attendance')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.CONTRACTOR)
 export class AttendanceController {
     constructor(private readonly attendanceService: AttendanceService) {}
 
     @Get()
+    @Roles(Role.CONTRACTOR)
     async getAttendanceLogs(
         @Request() req,
         @Query('workerId') workerId?: string,
@@ -20,6 +20,19 @@ export class AttendanceController {
     ) {
         return this.attendanceService.getAttendanceLogs(req.user.userId, {
             workerId,
+            startDate,
+            endDate,
+        });
+    }
+
+    @Get('worker')
+    @Roles(Role.WORKER)
+    async getWorkerAttendance(
+        @Request() req,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string,
+    ) {
+        return this.attendanceService.getWorkerAttendance(req.user.userId, {
             startDate,
             endDate,
         });

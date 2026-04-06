@@ -98,6 +98,11 @@ export class WorkLogsService {
                                     name: true,
                                 },
                             },
+                            workCategory: {
+                                select: {
+                                    name: true,
+                                },
+                            },
                         },
                     },
                     photos: true,
