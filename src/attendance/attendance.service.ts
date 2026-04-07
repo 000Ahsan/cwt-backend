@@ -67,6 +67,7 @@ export class AttendanceService {
                         id: true,
                         name: true,
                         email: true,
+                        image: true,
                     },
                 },
             },
