@@ -13,6 +13,14 @@ enum Role {
   WORKER
 }
 
+enum Currency {
+  USD
+  EUR
+  GBP
+  PKR
+  CAD
+}
+
 enum WorkLogStatus {
   PENDING
   APPROVED
@@ -34,6 +42,7 @@ model User {
   passwordHash    String
   image           String?
   categories      String?           // Comma-separated: e.g. "CONSTRUCTION,CLEANING"
+  currency        Currency          @default(USD)
   contractorId    String?
   contractor      User?             @relation("ContractorToWorker", fields: [contractorId], references: [id])
   workers         User[]            @relation("ContractorToWorker")

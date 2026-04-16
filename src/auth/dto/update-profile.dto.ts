@@ -1,5 +1,6 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MinLength, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Currency } from '@prisma/client';
 
 export class UpdateProfileDto {
     @ApiPropertyOptional({ example: 'John Doe' })
@@ -25,4 +26,9 @@ export class UpdateProfileDto {
     @ApiPropertyOptional({ type: 'string', format: 'binary', description: 'Profile image file' })
     @IsOptional()
     image?: any;
+
+    @ApiPropertyOptional({ enum: Currency, example: 'USD', description: 'Preferred currency (CONTRACTOR only)' })
+    @IsOptional()
+    @IsEnum(Currency)
+    currency?: Currency;
 }

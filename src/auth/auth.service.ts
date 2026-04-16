@@ -38,6 +38,7 @@ export class AuthService {
                 phone: user.phone,
                 name: user.name,
                 role: user.role,
+                currency: user.currency,
             },
         };
     }
@@ -66,6 +67,7 @@ export class AuthService {
             name: data.name,
             email: data.email,
             phone: data.phone,
+            ...(data.currency && { currency: data.currency }),
         };
 
         if (data.password) {
