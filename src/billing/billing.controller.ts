@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { BillingService } from './billing.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -50,17 +50,31 @@ export class BillingController {
     return this.billingService.markPaid(id, req.user.userId);
   }
 
-  @Post('preview-contractor')
+  @Post('preview-batch')
   @Roles(Role.CONTRACTOR)
-  @ApiOperation({ summary: 'Preview contractor billing generation' })
-  async previewContractorBilling(@Request() req, @Body() dto: GenerateContractorBillingDto) {
-    return this.billingService.calculateContractorBillingPreview(req.user.userId, dto);
+  @ApiOperation({ summary: 'Preview batch billing generation for project and contractor work' })
+  async previewBatchBilling(@Request() req, @Body() dto: GenerateContractorBillingDto) {
+    return this.billingService.getBatchBillingPreview(req.user.userId, dto);
   }
 
-  @Post('generate-contractor')
+  @Post('generate-batch')
   @Roles(Role.CONTRACTOR)
-  @ApiOperation({ summary: 'Generate contractor residual billing' })
-  async generateContractorBilling(@Request() req, @Body() dto: GenerateContractorBillingDto) {
-    return this.billingService.generateContractorBilling(req.user.userId, dto);
+  @ApiOperation({ summary: 'Generate collective/batch billing record' })
+  async generateBatchBilling(@Request() req, @Body() dto: GenerateContractorBillingDto) {
+    return this.billingService.createBatchBilling(req.user.userId, dto);
+  }
+
+  @Get(':id/details')
+  @Roles(Role.CONTRACTOR)
+  @ApiOperation({ summary: 'Get detailed billing record with work logs summary' })
+  async getBillingDetails(@Request() req, @Param('id') id: string) {
+    return this.billingService.getBillingDetails(id, req.user.userId);
+  }
+
+  @Delete(':id')
+  @Roles(Role.CONTRACTOR)
+  @ApiOperation({ summary: 'Delete an unpaid billing record' })
+  async deleteBilling(@Request() req, @Param('id') id: string) {
+    return this.billingService.deleteBilling(id, req.user.userId);
   }
 }

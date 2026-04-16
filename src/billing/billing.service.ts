@@ -1,23 +1,21 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { GenerateContractorBillingDto } from './dto/generate-contractor-billing.dto';
-import { BillingType, BillingStatus, WorkLogStatus, Prisma } from '@prisma/client';
+import { BillingStatus, WorkLogStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class BillingService {
     constructor(private prisma: PrismaService) {}
 
     async getBillingRecords(contractorId: string, filters: any) {
-        const { workerId, projectId, status, billingType, startDate, endDate, page = 1, limit = 20 } = filters;
+        const { workerId, status, startDate, endDate, page = 1, limit = 20 } = filters;
         
         const where: any = {
             worker: { contractorId: contractorId }
         };
 
         if (workerId) where.workerId = workerId;
-        if (projectId) where.projectId = projectId;
         if (status) where.status = status;
-        if (billingType) where.billingType = billingType;
 
         if (startDate || endDate) {
             where.date = {};
@@ -33,8 +31,6 @@ export class BillingService {
                 where,
                 include: {
                     worker: { select: { id: true, name: true } },
-                    project: { select: { id: true, name: true } },
-                    workCategory: { select: { id: true, name: true } },
                 },
                 skip,
                 take: Number(limit),
@@ -52,16 +48,14 @@ export class BillingService {
     }
 
     async getStats(contractorId: string, filters: any = {}) {
-        const { workerId, projectId, status, billingType, startDate, endDate } = filters;
+        const { workerId, status, startDate, endDate } = filters;
         
         const where: any = {
             worker: { contractorId: contractorId }
         };
 
         if (workerId) where.workerId = workerId;
-        if (projectId) where.projectId = projectId;
         if (status) where.status = status;
-        if (billingType) where.billingType = billingType;
 
         if (startDate || endDate) {
             where.date = {};
@@ -72,9 +66,10 @@ export class BillingService {
         const billings = await this.prisma.billing.findMany({
             where,
             select: {
-                amount: true,
+                projectTotal: true,
+                contractorTotal: true,
+                grandTotal: true,
                 status: true,
-                billingType: true
             }
         });
 
@@ -84,12 +79,12 @@ export class BillingService {
         let totalContractorBilling = 0;
 
         for (const billing of billings) {
-            const amount = billing.amount || 0;
+            const amount = billing.grandTotal || 0;
             if (billing.status === BillingStatus.DUE) totalDue += amount;
             if (billing.status === BillingStatus.PAID) totalPaid += amount;
             
-            if (billing.billingType === BillingType.PROJECT) totalProjectBilling += amount;
-            if (billing.billingType === BillingType.CONTRACTOR) totalContractorBilling += amount;
+            totalProjectBilling += (billing.projectTotal || 0);
+            totalContractorBilling += (billing.contractorTotal || 0);
         }
 
         return {
@@ -107,7 +102,7 @@ export class BillingService {
         });
 
         if (!billing) throw new NotFoundException('Billing record not found');
-        if (billing.worker.contractorId !== contractorId) throw new BadRequestException('Unauthorized');
+        if (billing.worker.contractorId !== contractorId) throw new ForbiddenException('Unauthorized');
 
         return this.prisma.billing.update({
             where: { id },
@@ -118,37 +113,80 @@ export class BillingService {
         });
     }
 
-    async calculateContractorBillingPreview(contractorId: string, dto: GenerateContractorBillingDto) {
+    async getBatchBillingPreview(contractorId: string, dto: GenerateContractorBillingDto) {
         const { workerId, startDate, endDate } = dto;
         const start = new Date(startDate);
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
+        const adjustedEnd = new Date(endDate);
+        adjustedEnd.setHours(23, 59, 59, 999);
 
-        // Check if already generated
-        const existing = await this.prisma.billing.findFirst({
-            where: {
-                workerId,
-                billingType: BillingType.CONTRACTOR,
-                date: { gte: start, lte: end }
-            }
+        const worker = await this.prisma.user.findUnique({ 
+            where: { id: workerId },
+            include: { contractor: true }
         });
-
-        if (existing) {
-            throw new BadRequestException('Contractor billing already generated for a date in this range.');
-        }
-
-        const worker = await this.prisma.user.findUnique({ where: { id: workerId } });
-        if (!worker || worker.contractorId !== contractorId) {
+        
+        if (!worker || (worker.contractorId !== contractorId && worker.id !== contractorId)) {
             throw new BadRequestException('Worker not found or unauthorized');
         }
 
         const defaultRate = worker.defaultHourlyRate || 0;
 
-        // Get Attendance Hours
+        // 1. Get ALL approved work logs in range that are not yet billed
+        const unbilledLogs = await this.prisma.workLog.findMany({
+            where: {
+                workSession: {
+                    workerId,
+                    date: { gte: start, lte: adjustedEnd }
+                },
+                status: WorkLogStatus.APPROVED,
+                billingId: null
+            },
+            include: {
+                workSession: {
+                    include: {
+                        project: true,
+                        workCategory: true
+                    }
+                }
+            }
+        });
+
+        const projectSummary: any[] = [];
+        let totalProjectHours = 0;
+        let totalProjectAmount = 0;
+
+        const grouping: Record<string, any> = {};
+
+        for (const log of unbilledLogs) {
+            const hours = (log.workSession.totalMinutes || 0) / 60;
+            const rate = log.workSession.hourlyRateAtTime || 0;
+            const amount = hours * rate;
+            
+            const key = `${log.workSession.projectId}-${log.workSession.workCategoryId}`;
+            if (!grouping[key]) {
+                grouping[key] = {
+                    projectId: log.workSession.projectId,
+                    projectName: log.workSession.project.name,
+                    categoryId: log.workSession.workCategoryId,
+                    categoryName: log.workSession.workCategory?.name || 'Uncategorized',
+                    hours: 0,
+                    amount: 0
+                };
+            }
+            grouping[key].hours += hours;
+            grouping[key].amount += amount;
+            totalProjectHours += hours;
+            totalProjectAmount += amount;
+        }
+
+        for (const key in grouping) {
+            projectSummary.push(grouping[key]);
+        }
+
+        // 2. Calculate Contractor Hours
         const attendances = await this.prisma.attendance.findMany({
             where: {
                 userId: workerId,
-                loginTime: { gte: start, lte: end },
+                loginTime: { gte: start, lte: adjustedEnd },
                 logoutTime: { not: null }
             }
         });
@@ -159,62 +197,148 @@ export class BillingService {
             totalAttendanceHours += ms / 3600000;
         }
 
-        // Get Project Hours (from already generated project billings in date range)
-        // Wait, the prompt says: "approved project work hours in same date range"
-        const approvedBillings = await this.prisma.billing.findMany({
+        const allProjectSessionsInRange = await this.prisma.workSession.findMany({
             where: {
                 workerId,
-                billingType: BillingType.PROJECT,
-                date: { gte: start, lte: end }
+                date: { gte: start, lte: adjustedEnd }
             }
         });
+        const totalProjectHoursInRange = allProjectSessionsInRange.reduce((sum, s) => sum + ((s.totalMinutes || 0) / 60), 0);
 
-        const totalProjectHours = approvedBillings.reduce((sum, b) => sum + b.hours, 0);
-        let contractorHours = totalAttendanceHours - totalProjectHours;
+        let contractorHours = totalAttendanceHours - totalProjectHoursInRange;
         if (contractorHours < 0) contractorHours = 0;
+        const contractorAmount = contractorHours * defaultRate;
 
         return {
-            totalAttendanceHours,
+            workerName: worker.name,
+            startDate,
+            endDate,
+            projectSummary,
             totalProjectHours,
+            totalProjectAmount,
             contractorHours,
-            hourlyRate: defaultRate,
-            payableAmount: contractorHours * defaultRate
+            contractorRate: defaultRate,
+            contractorAmount,
+            totalPayable: totalProjectAmount + contractorAmount,
+            unbilledLogIds: unbilledLogs.map(l => l.id)
         };
     }
 
-    async generateContractorBilling(contractorId: string, dto: GenerateContractorBillingDto) {
-        const preview = await this.calculateContractorBillingPreview(contractorId, dto);
+    async createBatchBilling(contractorId: string, dto: GenerateContractorBillingDto) {
+        const preview = await this.getBatchBillingPreview(contractorId, dto);
         
-        if (preview.contractorHours <= 0) {
-            throw new BadRequestException('No remaining contractor hours to bill for this period.');
+        if (preview.totalPayable <= 0) {
+            throw new BadRequestException('No unbilled work or contractor hours found for this period.');
         }
 
-        // We use the endDate as the date for this summary billing record
-        const date = new Date(dto.endDate);
-
-        return this.prisma.billing.create({
+        const billing = await this.prisma.billing.create({
             data: {
                 workerId: dto.workerId,
-                billingType: BillingType.CONTRACTOR,
-                hours: preview.contractorHours,
-                hourlyRate: preview.hourlyRate,
-                amount: preview.payableAmount,
+                projectHours: preview.totalProjectHours,
+                contractorHours: preview.contractorHours,
+                projectTotal: preview.totalProjectAmount,
+                contractorTotal: preview.contractorAmount,
+                grandTotal: preview.totalPayable,
                 status: BillingStatus.DUE,
-                date: date
+                date: new Date(dto.endDate),
             }
+        });
+
+        if (preview.unbilledLogIds.length > 0) {
+            await this.prisma.workLog.updateMany({
+                where: {
+                    id: { in: preview.unbilledLogIds }
+                },
+                data: {
+                    billingId: billing.id
+                }
+            });
+        }
+
+        return billing;
+    }
+
+    async getBillingDetails(id: string, contractorId: string) {
+        const billing = await this.prisma.billing.findUnique({
+            where: { id },
+            include: {
+                worker: true,
+                workLogs: {
+                    include: {
+                        workSession: {
+                            include: {
+                                project: true,
+                                workCategory: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!billing) throw new NotFoundException('Billing record not found');
+        if (billing.worker.contractorId !== contractorId) throw new ForbiddenException('Unauthorized');
+
+        const projectSummary: any[] = [];
+        const grouping: Record<string, any> = {};
+
+        for (const log of billing.workLogs) {
+            const hours = (log.workSession.totalMinutes || 0) / 60;
+            const rate = log.workSession.hourlyRateAtTime || 0;
+            const amount = hours * rate;
+            
+            const key = `${log.workSession.projectId}-${log.workSession.workCategoryId}`;
+            if (!grouping[key]) {
+                grouping[key] = {
+                    projectName: log.workSession.project.name,
+                    categoryName: log.workSession.workCategory?.name || 'Uncategorized',
+                    hours: 0,
+                    rate: rate,
+                    amount: 0
+                };
+            }
+            grouping[key].hours += hours;
+            grouping[key].amount += amount;
+        }
+
+        for (const key in grouping) {
+            projectSummary.push(grouping[key]);
+        }
+
+        return {
+            ...billing,
+            projectSummary
+        };
+    }
+
+    async deleteBilling(id: string, contractorId: string) {
+        const billing = await this.prisma.billing.findUnique({
+            where: { id },
+            include: { worker: true }
+        });
+
+        if (!billing) throw new NotFoundException('Billing record not found');
+        if (billing.worker.contractorId !== contractorId) throw new ForbiddenException('Unauthorized');
+        if (billing.status === BillingStatus.PAID) throw new BadRequestException('Cannot delete a paid billing record');
+
+        await this.prisma.workLog.updateMany({
+            where: { billingId: id },
+            data: { billingId: null }
+        });
+
+        return this.prisma.billing.delete({
+            where: { id }
         });
     }
 
     async getWorkerBillings(workerId: string, filters: any) {
-        const { projectId, status, billingType, startDate, endDate, page = 1, limit = 20 } = filters;
+        const { status, startDate, endDate, page = 1, limit = 20 } = filters;
         
         const where: any = {
             workerId: workerId
         };
 
-        if (projectId) where.projectId = projectId;
         if (status) where.status = status;
-        if (billingType) where.billingType = billingType;
 
         if (startDate || endDate) {
             where.date = {};
@@ -228,10 +352,6 @@ export class BillingService {
             this.prisma.billing.count({ where }),
             this.prisma.billing.findMany({
                 where,
-                include: {
-                    project: { select: { id: true, name: true } },
-                    workCategory: { select: { id: true, name: true } },
-                },
                 skip,
                 take: Number(limit),
                 orderBy: { date: 'desc' }
@@ -248,15 +368,13 @@ export class BillingService {
     }
 
     async getWorkerStats(workerId: string, filters: any = {}) {
-        const { projectId, status, billingType, startDate, endDate } = filters;
+        const { status, startDate, endDate } = filters;
         
         const where: any = {
             workerId: workerId
         };
 
-        if (projectId) where.projectId = projectId;
         if (status) where.status = status;
-        if (billingType) where.billingType = billingType;
 
         if (startDate || endDate) {
             where.date = {};
@@ -267,9 +385,8 @@ export class BillingService {
         const billings = await this.prisma.billing.findMany({
             where,
             select: {
-                amount: true,
+                grandTotal: true,
                 status: true,
-                billingType: true
             }
         });
 
@@ -278,7 +395,7 @@ export class BillingService {
         let totalBillings = 0;
 
         for (const billing of billings) {
-            const amount = billing.amount || 0;
+            const amount = billing.grandTotal || 0;
             totalBillings += amount;
             if (billing.status === BillingStatus.DUE) totalDue += amount;
             if (billing.status === BillingStatus.PAID) totalPaid += amount;

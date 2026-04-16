@@ -79,7 +79,6 @@ model Project {
   workCategoryLinks ProjectWorkCategory[]
   assignments     ProjectAssignment[]
   workSessions    WorkSession[]
-  billings        Billing[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   @@map("projects")
@@ -151,7 +150,8 @@ model WorkLog {
   contractorComment String?           @db.Text
   photos            WorkPhoto[]
   createdAt         DateTime          @default(now())
-  billing           Billing?
+  billingId         String?
+  billing           Billing?          @relation(fields: [billingId], references: [id], onDelete: SetNull)
   @@map("work_logs")
 }
 
@@ -177,7 +177,6 @@ model WorkCategory {
   projectLinks    ProjectWorkCategory[]
   workerLinks      UserWorkCategory[]
   workSessions    WorkSession[]
-  billings        Billing[]
 
   @@unique([contractorId, name])
   @@map("work_categories")
@@ -203,35 +202,26 @@ model ProjectWorkCategory {
   @@map("project_work_categories")
 }
 
-enum BillingType {
-  PROJECT
-  CONTRACTOR
-}
-
 enum BillingStatus {
   DUE
   PAID
 }
 
 model Billing {
-  id              String            @id @default(uuid())
-  workerId        String
-  worker          User              @relation(fields: [workerId], references: [id], onDelete: Cascade)
-  projectId       String?
-  project         Project?          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  workLogId       String?           @unique
-  workLog         WorkLog?          @relation(fields: [workLogId], references: [id], onDelete: SetNull)
-  workCategoryId  String?
-  workCategory    WorkCategory?     @relation(fields: [workCategoryId], references: [id], onDelete: SetNull)
-  billingType     BillingType
-  hours           Float
-  hourlyRate      Float
-  amount          Float
-  status          BillingStatus     @default(DUE)
-  paidAt          DateTime?
-  date            DateTime          @db.Date
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id                String            @id @default(uuid())
+  workerId          String
+  worker            User              @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  workLogs          WorkLog[]         
+  projectHours      Float             @default(0)
+  contractorHours   Float             @default(0)
+  projectTotal      Float             @default(0)
+  contractorTotal   Float             @default(0)
+  grandTotal        Float             @default(0)
+  status            BillingStatus     @default(DUE)
+  paidAt            DateTime?
+  date              DateTime          @db.Date
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   @@map("billings")
 }

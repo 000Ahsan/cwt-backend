@@ -11,6 +11,7 @@ import { CloudinaryService } from '../common/cloudinary/cloudinary.service';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { CreateWorkLogDto } from './dto/create-work-log.dto';
 import { SignOffWorkLogDto } from './dto/sign-off-work-log.dto';
+import { UpdateWorkLogTimeDto } from './dto/update-work-log-time.dto';
 
 @ApiTags('Work Logs')
 @ApiBearerAuth()
@@ -119,5 +120,16 @@ export class WorkLogsController {
         @Body() body: SignOffWorkLogDto,
     ) {
         return this.workLogsService.signOffLog(req.user.userId, id, body);
+    }
+
+    @Patch(':id/time')
+    @Roles(Role.CONTRACTOR)
+    @ApiOperation({ summary: 'Update work log start and end time' })
+    async updateTime(
+        @Request() req,
+        @Param('id') id: string,
+        @Body() body: UpdateWorkLogTimeDto,
+    ) {
+        return this.workLogsService.updateLogTime(req.user.userId, id, body);
     }
 }
