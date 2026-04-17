@@ -37,7 +37,6 @@ async function main() {
     const cat1 = await prisma.workCategory.create({
         data: {
             name: 'CONSTRUCTION',
-            hourlyRate: 50,
             contractorId: contractor.id
         }
     });
@@ -45,7 +44,6 @@ async function main() {
     const cat2 = await prisma.workCategory.create({
         data: {
             name: 'PLUMBING',
-            hourlyRate: 60,
             contractorId: contractor.id
         }
     });
@@ -106,8 +104,8 @@ async function main() {
     // 5. Assign Workers to Project
     await prisma.projectAssignment.createMany({
         data: [
-            { projectId: project.id, workerId: worker1.id },
-            { projectId: project.id, workerId: worker2.id },
+            { projectId: project.id, workerId: worker1.id, workCategoryId: cat1.id, hourlyRate: 25 },
+            { projectId: project.id, workerId: worker2.id, workCategoryId: cat1.id, hourlyRate: 20 },
         ],
     });
 

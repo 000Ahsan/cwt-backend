@@ -145,7 +145,8 @@ export class UsersService {
             include: {
                 assignments: {
                     include: {
-                        project: true
+                        project: true,
+                        workCategory: true
                     }
                 },
                 workCategoryLinks: {

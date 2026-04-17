@@ -102,8 +102,11 @@ model ProjectAssignment {
   project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   workerId        String
   worker          User              @relation(fields: [workerId], references: [id])
+  workCategoryId  String
+  workCategory    WorkCategory      @relation(fields: [workCategoryId], references: [id])
+  hourlyRate      Float
   assignedAt      DateTime          @default(now())
-  @@unique([projectId, workerId])
+  @@unique([projectId, workerId, workCategoryId])
   @@map("project_assignments")
 }
 
@@ -171,12 +174,12 @@ model WorkCategory {
   contractorId    String
   contractor      User              @relation("MgrCat", fields: [contractorId], references: [id])
   name            String
-  hourlyRate      Float             @default(0)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   projectLinks    ProjectWorkCategory[]
   workerLinks      UserWorkCategory[]
   workSessions    WorkSession[]
+  projectAssignments ProjectAssignment[]
 
   @@unique([contractorId, name])
   @@map("work_categories")

@@ -6,10 +6,5 @@ export class CreateWorkCategoryDto {
     @IsString()
     @IsNotEmpty()
     name: string;
-
-    @ApiProperty({ example: 25.0 })
-    @IsNumber()
-    @Min(0)
-    @IsNotEmpty()
-    hourlyRate: number;
 }
+

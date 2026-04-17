@@ -60,6 +60,19 @@ export class ProjectsController {
     @Roles(Role.CONTRACTOR)
     @ApiOperation({ summary: 'Assign a worker to a project' })
     async assignWorker(@Param('id') projectId: string, @Body() body: AssignWorkerDto, @Request() req) {
-        return this.projectsService.assignWorker(projectId, body.workerId, req.user.userId);
+        return this.projectsService.assignWorker(projectId, body.workerId, body.workCategoryId, body.hourlyRate, req.user.userId);
     }
+
+    @Delete(':projectId/assignments/:workerId/:workCategoryId')
+    @Roles(Role.CONTRACTOR)
+    @ApiOperation({ summary: 'Unassign a worker from a project role' })
+    async unassignWorker(
+        @Param('projectId') projectId: string,
+        @Param('workerId') workerId: string,
+        @Param('workCategoryId') workCategoryId: string,
+        @Request() req
+    ) {
+        return this.projectsService.unassignWorker(projectId, workerId, workCategoryId, req.user.userId);
+    }
+
 }

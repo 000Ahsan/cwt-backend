@@ -49,8 +49,8 @@ async function main() {
                 create: {
                     name,
                     contractorId: contractor.id,
-                    hourlyRate: 0 // Default
                 }
+
             });
             nameToIdMap.set(name, cat.id);
             console.log(`  Identified/Created Category: ${name}`);

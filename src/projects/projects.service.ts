@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { FileService } from '../common/file/file.service';
 import { Prisma, Project, WorkLogStatus } from '@prisma/client';
@@ -161,7 +161,7 @@ export class ProjectsService {
         });
     }
 
-    async assignWorker(projectId: string, workerId: string, contractorId: string) {
+    async assignWorker(projectId: string, workerId: string, workCategoryId: string, hourlyRate: number, contractorId: string) {
         // Verify project ownership
         await this.findOne(projectId, contractorId);
 
@@ -171,23 +171,61 @@ export class ProjectsService {
         });
         if (!worker) throw new ForbiddenException('Worker does not belong to this contractor');
 
+        // Verify category exists
+        const category = await this.prisma.workCategory.findFirst({
+            where: { id: workCategoryId, contractorId }
+        });
+        if (!category) throw new NotFoundException('Work category not found');
+
+        // Check if already assigned
+        const existing = await this.prisma.projectAssignment.findUnique({
+            where: {
+                projectId_workerId_workCategoryId: {
+                    projectId,
+                    workerId,
+                    workCategoryId
+                }
+            }
+        });
+        if (existing) throw new ConflictException('Worker is already assigned to this project in this category');
+
         return this.prisma.projectAssignment.create({
             data: {
                 projectId,
                 workerId,
+                workCategoryId,
+                hourlyRate
             },
         });
     }
+
+    async unassignWorker(projectId: string, workerId: string, workCategoryId: string, contractorId: string) {
+        // Verify project ownership
+        await this.findOne(projectId, contractorId);
+
+        return this.prisma.projectAssignment.delete({
+            where: {
+                projectId_workerId_workCategoryId: {
+                    projectId,
+                    workerId,
+                    workCategoryId
+                }
+            }
+        });
+    }
+
 
     async findAssignedProjects(workerId: string): Promise<any> {
         const assignments = await this.prisma.projectAssignment.findMany({
             where: { workerId },
             include: {
+                workCategory: true,
                 project: {
                     include: {
                         assignments: {
                             include: {
                                 worker: true,
+                                workCategory: true
                             },
                         },
                         workSessions: {
@@ -209,16 +247,33 @@ export class ProjectsService {
             },
         });
 
-        const projects = assignments.map(a => {
-            const mappedProject = this._mapProjectWithWorkers(a.project);
-            // Find this specific worker's entry in the mapped workers array
-            const myStats = mappedProject.workers.find(w => w.id === workerId);
-            return {
-                ...mappedProject,
-                myHours: myStats ? myStats.projectHours : 0,
-            };
-        });
+        // Group assignments by project
+        const projectMap = new Map<string, any>();
 
-        return projects;
+        for (const a of assignments) {
+            if (!projectMap.has(a.projectId)) {
+                const mappedProject = this._mapProjectWithWorkers(a.project);
+                // Find this specific worker's entry in the mapped workers array (optional, for backward compatibility)
+                const myStats = mappedProject.workers.find(w => w.id === workerId);
+                
+                projectMap.set(a.projectId, {
+                    ...mappedProject,
+                    myHours: myStats ? myStats.projectHours : 0,
+                    assignedCategories: [] // Initialize assigned categories list
+                });
+            }
+            
+            const p = projectMap.get(a.projectId);
+            p.assignedCategories.push({
+                ...a.workCategory,
+                assignmentRate: a.hourlyRate
+            });
+            
+            // Override the generic 'categories' with specifically assigned ones for the worker app
+            p.categories = p.assignedCategories;
+        }
+
+        return Array.from(projectMap.values());
     }
+
 }

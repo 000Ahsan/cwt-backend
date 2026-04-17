@@ -23,45 +23,31 @@ export class SessionsService {
             });
         }
 
-        // Verify project assignment
+        // Verify project assignment for this specific CATEGORY
         const assignment = await this.prisma.projectAssignment.findUnique({
-            where: { projectId_workerId: { projectId, workerId } },
-        });
-        if (!assignment) throw new BadRequestException('You are not assigned to this project');
-
-        const category = await this.prisma.workCategory.findUnique({
-            where: { id: workCategoryId },
-        });
-        if (!category) throw new BadRequestException('Invalid work category');
-
-        // Check for unsigned-off / rejected work logs for this project in the SAME category
-        const pendingLogs = await this.prisma.workLog.findFirst({
             where: {
-                workSession: {
-                    workerId,
+                projectId_workerId_workCategoryId: {
                     projectId,
-                    workCategoryId,
-                },
-                status: WorkLogStatus.PENDING,
+                    workerId,
+                    workCategoryId
+                }
             },
         });
-
-        if (pendingLogs) {
-            throw new BadRequestException(`You have pending work logs for this project in the "${category.name}" category that must be signed off before starting a new session in this category.`);
-        }
+        if (!assignment) throw new BadRequestException('You are not assigned to this project with this category');
 
         return this.prisma.workSession.create({
             data: {
                 workerId,
                 projectId,
                 workCategoryId,
-                hourlyRateAtTime: category.hourlyRate,
+                hourlyRateAtTime: assignment.hourlyRate, // Use rate from assignment
                 status: WorkSessionStatus.ACTIVE,
                 startTime: new Date(),
                 date: new Date(),
             },
         });
     }
+
 
     async pauseSession(workerId: string): Promise<WorkSession> {
         const activeSession = await this.prisma.workSession.findFirst({
