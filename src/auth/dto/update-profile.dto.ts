@@ -31,4 +31,18 @@ export class UpdateProfileDto {
     @IsOptional()
     @IsEnum(Currency)
     currency?: Currency;
+
+    @ApiPropertyOptional({ example: 'Acme Construction Ltd.' })
+    @IsOptional()
+    @IsString()
+    companyName?: string;
+
+    @ApiPropertyOptional({ example: '123 Main St, City, Country' })
+    @IsOptional()
+    @IsString()
+    companyAddress?: string;
+
+    @ApiPropertyOptional({ type: 'string', format: 'binary', description: 'Company logo image file' })
+    @IsOptional()
+    companyLogo?: any;
 }

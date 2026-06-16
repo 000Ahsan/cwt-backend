@@ -277,7 +277,9 @@ export class BillingService {
         });
 
         if (!billing) throw new NotFoundException('Billing record not found');
-        if (billing.worker.contractorId !== contractorId) throw new ForbiddenException('Unauthorized');
+        if (billing.worker.contractorId !== contractorId && billing.workerId !== contractorId) {
+            throw new ForbiddenException('Unauthorized');
+        }
 
         const projectSummary: any[] = [];
         const grouping: Record<string, any> = {};

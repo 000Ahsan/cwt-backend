@@ -161,10 +161,30 @@ export class UsersService {
     }
 
     mapWorkerCategories(worker: any) {
-        const { workCategoryLinks, ...rest } = worker;
+        const { workCategoryLinks, assignments, ...rest } = worker;
+
+        // Group assignments by project
+        const projectMap = new Map<string, any>();
+        assignments?.forEach((a: any) => {
+            if (!projectMap.has(a.projectId)) {
+                projectMap.set(a.projectId, {
+                    ...a.project,
+                    categories: []
+                });
+            }
+            const project = projectMap.get(a.projectId);
+            project.categories.push({
+                ...a.workCategory,
+                assignmentId: a.id,
+                hourlyRate: a.hourlyRate,
+                assignedAt: a.assignedAt
+            });
+        });
+
         return {
             ...rest,
-            categories: workCategoryLinks?.map(link => link.workCategory) || []
+            categories: workCategoryLinks?.map(link => link.workCategory) || [],
+            assignments: Array.from(projectMap.values())
         };
     }
 }

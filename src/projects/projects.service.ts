@@ -41,6 +41,7 @@ export class ProjectsService {
                 assignments: {
                     include: {
                         worker: true,
+                        workCategory: true,
                     },
                 },
                 workSessions: {
@@ -70,6 +71,7 @@ export class ProjectsService {
                 assignments: {
                     include: {
                         worker: true,
+                        workCategory: true,
                     },
                 },
                 workSessions: {
@@ -98,22 +100,38 @@ export class ProjectsService {
         // Calculate actualHours (cumulative for the project)
         const actualHours = workSessions.reduce((acc, session) => acc + ((session.totalMinutes || 0) / 60), 0);
 
+        // Group workers by ID
+        const workerMap = new Map<string, any>();
+
+        assignments?.forEach(a => {
+            if (!workerMap.has(a.workerId)) {
+                const { passwordHash, ...workerData } = a.worker;
+
+                // Calculate projectHours for this specific worker
+                const workerSessions = workSessions.filter(s => s.workerId === a.workerId);
+                const projectHours = workerSessions.reduce((acc, session) => acc + ((session.totalMinutes || 0) / 60), 0);
+
+                workerMap.set(a.workerId, {
+                    ...workerData,
+                    projectHours: Math.round(projectHours * 100) / 100,
+                    categories: [], // Assigned categories for this project
+                });
+            }
+
+            const worker = workerMap.get(a.workerId);
+            if (a.workCategory) {
+                worker.categories.push({
+                    ...a.workCategory,
+                    hourlyRate: a.hourlyRate
+                });
+            }
+        });
+
         return {
             ...projectData,
             actualHours: Math.round(actualHours * 100) / 100,
             categories: workCategoryLinks?.map(link => link.workCategory) || [],
-            workers: assignments.map(a => {
-                const { passwordHash, ...workerData } = a.worker;
-
-                // Calculate projectHours for this specific worker
-                const workerSessions = workSessions.filter(s => s.workerId === workerData.id);
-                const projectHours = workerSessions.reduce((acc, session) => acc + ((session.totalMinutes || 0) / 60), 0);
-
-                return {
-                    ...workerData,
-                    projectHours: Math.round(projectHours * 100) / 100,
-                };
-            }),
+            workers: Array.from(workerMap.values()),
         };
     }
 

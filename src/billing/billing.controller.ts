@@ -65,7 +65,7 @@ export class BillingController {
   }
 
   @Get(':id/details')
-  @Roles(Role.CONTRACTOR)
+  @Roles(Role.CONTRACTOR, Role.WORKER)
   @ApiOperation({ summary: 'Get detailed billing record with work logs summary' })
   async getBillingDetails(@Request() req, @Param('id') id: string) {
     return this.billingService.getBillingDetails(id, req.user.userId);
