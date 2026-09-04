@@ -65,7 +65,7 @@ export class AuthController {
     async updateProfile(
         @Request() req,
         @Body() updateProfileDto: UpdateProfileDto,
-        @UploadedFile() files?: { image?: Express.Multer.File[]; companyLogo?: Express.Multer.File[] },
+        @UploadedFiles() files?: { image?: Express.Multer.File[]; companyLogo?: Express.Multer.File[] },
     ) {
         let imageUrl: string | undefined;
         let companyLogoUrl: string | undefined;

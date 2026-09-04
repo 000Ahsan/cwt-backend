@@ -27,8 +27,8 @@ async function bootstrap() {
   }));
 
   const config = new DocumentBuilder()
-    .setTitle('CrewTrack API')
-    .setDescription('API documentation for CrewTrack Backend')
+    .setTitle('FieldHQ API')
+    .setDescription('API documentation for FieldHQ Backend')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
