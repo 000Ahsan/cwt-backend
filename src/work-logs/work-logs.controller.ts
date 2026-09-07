@@ -7,10 +7,11 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { CloudinaryService } from '../common/cloudinary/cloudinary.service';
+import { FileService } from '../common/file/file.service';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { CreateWorkLogDto } from './dto/create-work-log.dto';
 import { SignOffWorkLogDto } from './dto/sign-off-work-log.dto';
+import { UpdateWorkLogTimeDto } from './dto/update-work-log-time.dto';
 
 @ApiTags('Work Logs')
 @ApiBearerAuth()
@@ -19,7 +20,7 @@ import { SignOffWorkLogDto } from './dto/sign-off-work-log.dto';
 export class WorkLogsController {
     constructor(
         private workLogsService: WorkLogsService,
-        private cloudinaryService: CloudinaryService
+        private fileService: FileService,
     ) { }
 
     @Post()
@@ -29,16 +30,16 @@ export class WorkLogsController {
     @UseInterceptors(FilesInterceptor('photos', 10, {
         storage: memoryStorage(),
         fileFilter: (req, file, cb) => {
-            if (!file.mimetype.match(/\/(jpg|jpeg|png)$/)) {
-                return cb(new Error('Only image files (jpg/png) are allowed!'), false);
+            if (!file.mimetype || !file.mimetype.startsWith('image/')) {
+                return cb(new Error(`Only image files are allowed! Mimetype was: ${file.mimetype}`), false);
             }
             cb(null, true);
         },
         limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
     }))
     async create(@Request() req, @Body() body: CreateWorkLogDto, @UploadedFiles() files: Express.Multer.File[]) {
-        const uploadedPhotos = await this.cloudinaryService.uploadFiles(files);
-        
+        const uploadedPhotos = await this.fileService.saveMulterFiles(files || [], 'work-photos');
+
         return this.workLogsService.createLog(req.user.userId, {
             sessionId: body.sessionId,
             description: body.description,
@@ -79,6 +80,7 @@ export class WorkLogsController {
     @ApiOperation({ summary: 'Get all work logs for the contractor with filters and pagination' })
     @ApiQuery({ name: 'workerId', required: false, type: String, description: 'Filter by worker ID' })
     @ApiQuery({ name: 'projectId', required: false, type: String, description: 'Filter by project ID' })
+    @ApiQuery({ name: 'category', required: false, type: String, description: 'Filter by work category name' })
     @ApiQuery({ name: 'startDate', required: false, type: String, example: '2026-03-01', description: 'Start of date range (inclusive)' })
     @ApiQuery({ name: 'endDate', required: false, type: String, example: '2026-03-31', description: 'End of date range (inclusive)' })
     @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number (default: 1)' })
@@ -87,6 +89,7 @@ export class WorkLogsController {
         @Request() req,
         @Query('workerId') workerId?: string,
         @Query('projectId') projectId?: string,
+        @Query('category') category?: string,
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string,
         @Query('page') page?: string,
@@ -95,6 +98,7 @@ export class WorkLogsController {
         return this.workLogsService.getContractorLogs(req.user.userId, {
             workerId,
             projectId,
+            category,
             startDate,
             endDate,
             page: page ? parseInt(page, 10) : undefined,
@@ -111,5 +115,16 @@ export class WorkLogsController {
         @Body() body: SignOffWorkLogDto,
     ) {
         return this.workLogsService.signOffLog(req.user.userId, id, body);
+    }
+
+    @Patch(':id/time')
+    @Roles(Role.CONTRACTOR)
+    @ApiOperation({ summary: 'Update work log start and end time' })
+    async updateTime(
+        @Request() req,
+        @Param('id') id: string,
+        @Body() body: UpdateWorkLogTimeDto,
+    ) {
+        return this.workLogsService.updateLogTime(req.user.userId, id, body);
     }
 }

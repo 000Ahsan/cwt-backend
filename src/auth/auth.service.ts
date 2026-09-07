@@ -38,6 +38,11 @@ export class AuthService {
                 phone: user.phone,
                 name: user.name,
                 role: user.role,
+                image: user.image,
+                currency: user.currency,
+                companyName: user.companyName,
+                companyLogo: user.companyLogo,
+                companyAddress: user.companyAddress,
             },
         };
     }
@@ -61,11 +66,19 @@ export class AuthService {
         }
     }
 
-    async updateProfile(userId: string, data: UpdateProfileDto, imagePath?: string) {
+    async updateProfile(
+        userId: string,
+        data: UpdateProfileDto,
+        imagePath?: string,
+        companyLogoPath?: string,
+    ) {
         const updateData: any = {
             name: data.name,
             email: data.email,
             phone: data.phone,
+            companyName: data.companyName,
+            companyAddress: data.companyAddress,
+            ...(data.currency && { currency: data.currency }),
         };
 
         if (data.password) {
@@ -74,6 +87,10 @@ export class AuthService {
 
         if (imagePath) {
             updateData.image = imagePath;
+        }
+
+        if (companyLogoPath) {
+            updateData.companyLogo = companyLogoPath;
         }
 
         const user = await this.usersService.update(userId, updateData);

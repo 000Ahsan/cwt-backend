@@ -1,9 +1,9 @@
 import { Controller, Get, Param, Res, UseGuards, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
 import type { Response } from 'express';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { FileService } from '../common/file/file.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Role } from '@prisma/client';
-import * as path from 'path';
 import * as fs from 'fs';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
@@ -12,7 +12,10 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 @Controller('uploads/work-photos')
 @UseGuards(JwtAuthGuard)
 export class WorkPhotosController {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private fileService: FileService,
+    ) { }
 
     @Get(':year/:month/:filename')
     @ApiOperation({ summary: 'View/Download a work photo (authorized access only)' })
@@ -23,10 +26,7 @@ export class WorkPhotosController {
         @Request() req,
         @Res() res: Response,
     ) {
-        const relativePath = `./uploads/work-photos/${year}/${month}/${filename}`;
-
-        // Auth Check: Does this photo belong to a project the user can access?
-        // We match by filename only to avoid Windows backslash vs forward-slash path mismatches
+        // Match by filename to avoid Windows backslash vs forward-slash path mismatches
         const photo = await this.prisma.workPhoto.findFirst({
             where: { filePath: { contains: filename } },
             include: {
@@ -53,8 +53,15 @@ export class WorkPhotosController {
             if (workerId !== req.user.userId) throw new ForbiddenException();
         }
 
-        const absolutePath = path.resolve(relativePath);
-        if (!fs.existsSync(absolutePath)) throw new NotFoundException('File on disk not found');
+        const absolutePath = this.fileService.resolveAbsolutePath(
+            photo.filePath.startsWith('/uploads/')
+                ? photo.filePath
+                : `/uploads/work-photos/${year}/${month}/${filename}`,
+        );
+
+        if (!fs.existsSync(absolutePath)) {
+            throw new NotFoundException('File on disk not found');
+        }
 
         res.sendFile(absolutePath);
     }

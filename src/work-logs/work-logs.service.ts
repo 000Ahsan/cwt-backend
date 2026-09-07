@@ -1,15 +1,16 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { WorkLog, WorkPhoto, WorkLogStatus } from '@prisma/client';
-import * as path from 'path';
-import * as fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
+import { WorkLogStatus } from '@prisma/client';
+import { StoredFile } from '../common/file/file.service';
 
 @Injectable()
 export class WorkLogsService {
     constructor(private prisma: PrismaService) { }
 
-    async createLog(workerId: string, data: { sessionId: string; description: string; photos?: any[] }): Promise<any> {
+    async createLog(
+        workerId: string,
+        data: { sessionId: string; description: string; photos?: StoredFile[] },
+    ): Promise<any> {
         // Verify session belongs to worker and is active
         const session = await this.prisma.workSession.findUnique({
             where: { id: data.sessionId },
@@ -29,9 +30,9 @@ export class WorkLogsService {
                 await this.prisma.workPhoto.create({
                     data: {
                         workLogId: workLog.id,
-                        filePath: photo.secure_url,
-                        mimeType: photo.resource_type + '/' + photo.format,
-                        size: photo.bytes,
+                        filePath: photo.filePath,
+                        mimeType: photo.mimeType,
+                        size: photo.size,
                     },
                 });
             }
@@ -47,6 +48,7 @@ export class WorkLogsService {
             ...logsWithPhotos,
             photos: logsWithPhotos.photos.map(photo => ({
                 ...photo,
+                url: photo.filePath,
             })),
         };
     }
@@ -98,6 +100,11 @@ export class WorkLogsService {
                                     name: true,
                                 },
                             },
+                            workCategory: {
+                                select: {
+                                    name: true,
+                                },
+                            },
                         },
                     },
                     photos: true,
@@ -125,13 +132,14 @@ export class WorkLogsService {
         filters: {
             workerId?: string;
             projectId?: string;
+            category?: string;
             startDate?: string;
             endDate?: string;
             page?: number;
             limit?: number;
         },
     ) {
-        const { workerId, projectId, startDate, endDate } = filters;
+        const { workerId, projectId, category, startDate, endDate } = filters;
         const page = Math.max(1, filters.page ?? 1);
         const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
         const skip = (page - 1) * limit;
@@ -141,6 +149,7 @@ export class WorkLogsService {
                 project: { contractorId },
                 ...(workerId && { workerId }),
                 ...(projectId && { projectId }),
+                ...(category && { category }),
                 ...(startDate || endDate
                     ? {
                         date: {
@@ -163,6 +172,7 @@ export class WorkLogsService {
                     photos: true,
                     workSession: {
                         include: {
+                            workCategory: { select: { id: true, name: true } },
                             worker: { select: { id: true, name: true, email: true } },
                             project: { select: { id: true, name: true, address: true } },
                         },
@@ -185,6 +195,63 @@ export class WorkLogsService {
             })),
         };
     }
+    async updateLogTime(contractorId: string, logId: string, data: { startTime: string; endTime: string; date?: string }) {
+        const log = await this.prisma.workLog.findUnique({
+            where: { id: logId },
+            include: {
+                workSession: {
+                    include: {
+                        project: true,
+                    },
+                },
+                billing: true,
+            },
+        });
+
+        if (!log) throw new NotFoundException('Work log not found');
+        if (log.workSession.project.contractorId !== contractorId) {
+            throw new ForbiddenException('You do not have permission to edit this work log');
+        }
+
+        const start = new Date(data.startTime);
+        const end = new Date(data.endTime);
+
+        if (end <= start) {
+            throw new BadRequestException('End time must be after start time');
+        }
+
+        const totalMinutes = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+
+        // Update the work session
+        await this.prisma.workSession.update({
+            where: { id: log.workSessionId },
+            data: {
+                startTime: start,
+                endTime: end,
+                totalMinutes,
+                ...(data.date && { date: new Date(data.date) }),
+            },
+        });
+
+        // Note: Automatic billing update removed as billings are now generated manually/collectively.
+        // If we want to support updating collective billing records, we'd need to recalculate the whole billing.
+        // For now, if a log is already linked to a billing, we might want to warn or prevent edit,
+        // but the prompt implies contractor edits BEFORE generating monthly billing.
+
+        return this.prisma.workLog.findUnique({
+            where: { id: logId },
+            include: {
+                workSession: {
+                    include: {
+                        workCategory: { select: { id: true, name: true } },
+                        worker: { select: { id: true, name: true, email: true } },
+                        project: { select: { id: true, name: true, address: true } },
+                    },
+                },
+            },
+        });
+    }
+
     async signOffLog(contractorId: string, logId: string, data: { status: WorkLogStatus; comment?: string }) {
         const log = await this.prisma.workLog.findUnique({
             where: { id: logId },
@@ -202,12 +269,17 @@ export class WorkLogsService {
             throw new ForbiddenException('You do not have permission to sign off this work log');
         }
 
-        return this.prisma.workLog.update({
+        const updatedLog = await this.prisma.workLog.update({
             where: { id: logId },
             data: {
                 status: data.status,
                 contractorComment: data.comment,
             },
         });
+
+        // NOTE: Automatic billing creation has been removed. 
+        // Billings are now generated manually from the billing page.
+
+        return updatedLog;
     }
 }

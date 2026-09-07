@@ -5,11 +5,20 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "debian-openssl-1.0.x", "debian-openssl-1.1.x"]
 }
 
 enum Role {
   CONTRACTOR
   WORKER
+}
+
+enum Currency {
+  USD
+  EUR
+  GBP
+  PKR
+  CAD
 }
 
 enum WorkLogStatus {
@@ -32,17 +41,25 @@ model User {
   phone           String?           @unique
   passwordHash    String
   image           String?
+  companyName     String?
+  companyLogo     String?
+  companyAddress  String?           @db.Text
   categories      String?           // Comma-separated: e.g. "CONSTRUCTION,CLEANING"
+  currency        Currency          @default(USD)
   contractorId    String?
   contractor      User?             @relation("ContractorToWorker", fields: [contractorId], references: [id])
   workers         User[]            @relation("ContractorToWorker")
   projects        Project[]         @relation("ContractorProjects")
+  managedCategories WorkCategory[]  @relation("MgrCat")
+  workCategoryLinks UserWorkCategory[]
   assignments     ProjectAssignment[]
   workSessions    WorkSession[]
   attendances     Attendance[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   deletedAt       DateTime?
+  defaultHourlyRate Float           @default(0)
+  billings        Billing[]
   @@map("users")
 }
 
@@ -62,6 +79,7 @@ model Project {
   endDate         DateTime?
   active          Boolean           @default(true)
   isLocationBound Boolean           @default(false)
+  workCategoryLinks ProjectWorkCategory[]
   assignments     ProjectAssignment[]
   workSessions    WorkSession[]
   createdAt       DateTime          @default(now())
@@ -87,8 +105,11 @@ model ProjectAssignment {
   project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   workerId        String
   worker          User              @relation(fields: [workerId], references: [id])
+  workCategoryId  String
+  workCategory    WorkCategory      @relation(fields: [workCategoryId], references: [id])
+  hourlyRate      Float
   assignedAt      DateTime          @default(now())
-  @@unique([projectId, workerId])
+  @@unique([projectId, workerId, workCategoryId])
   @@map("project_assignments")
 }
 
@@ -98,16 +119,19 @@ model WorkSession {
   worker          User              @relation(fields: [workerId], references: [id])
   projectId       String
   project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  category        String?
-  status          WorkSessionStatus @default(ACTIVE)
-  startTime       DateTime          @default(now())
-  endTime         DateTime?
-  totalMinutes    Int?
-  date            DateTime          @db.Date
-  workLogs        WorkLog[]
-  pauses          WorkSessionPause[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  category          String?
+  workCategoryId    String?
+  workCategory      WorkCategory?     @relation(fields: [workCategoryId], references: [id])
+  hourlyRateAtTime  Float?
+  status            WorkSessionStatus @default(ACTIVE)
+  startTime         DateTime          @default(now())
+  endTime           DateTime?
+  totalMinutes      Int?
+  date              DateTime          @db.Date
+  workLogs          WorkLog[]
+  pauses            WorkSessionPause[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
   @@map("work_sessions")
 }
 
@@ -132,6 +156,8 @@ model WorkLog {
   contractorComment String?           @db.Text
   photos            WorkPhoto[]
   createdAt         DateTime          @default(now())
+  billingId         String?
+  billing           Billing?          @relation(fields: [billingId], references: [id], onDelete: SetNull)
   @@map("work_logs")
 }
 
@@ -144,5 +170,65 @@ model WorkPhoto {
   size            Int
   createdAt       DateTime          @default(now())
   @@map("work_photos")
+}
+
+model WorkCategory {
+  id              String            @id @default(uuid())
+  contractorId    String
+  contractor      User              @relation("MgrCat", fields: [contractorId], references: [id])
+  name            String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  projectLinks    ProjectWorkCategory[]
+  workerLinks      UserWorkCategory[]
+  workSessions    WorkSession[]
+  projectAssignments ProjectAssignment[]
+
+  @@unique([contractorId, name])
+  @@map("work_categories")
+}
+
+model UserWorkCategory {
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workCategoryId  String
+  workCategory    WorkCategory      @relation(fields: [workCategoryId], references: [id], onDelete: Cascade)
+
+  @@id([userId, workCategoryId])
+  @@map("user_work_categories")
+}
+
+model ProjectWorkCategory {
+  projectId       String
+  project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workCategoryId  String
+  workCategory    WorkCategory      @relation(fields: [workCategoryId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, workCategoryId])
+  @@map("project_work_categories")
+}
+
+enum BillingStatus {
+  DUE
+  PAID
+}
+
+model Billing {
+  id                String            @id @default(uuid())
+  workerId          String
+  worker            User              @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  workLogs          WorkLog[]         
+  projectHours      Float             @default(0)
+  contractorHours   Float             @default(0)
+  projectTotal      Float             @default(0)
+  contractorTotal   Float             @default(0)
+  grandTotal        Float             @default(0)
+  status            BillingStatus     @default(DUE)
+  paidAt            DateTime?
+  date              DateTime          @db.Date
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@map("billings")
 }
 

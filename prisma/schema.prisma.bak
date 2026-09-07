@@ -1,0 +1,171 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "debian-openssl-1.0.x", "debian-openssl-1.1.x"]
+}
+
+enum Role {
+  CONTRACTOR
+  WORKER
+}
+
+enum WorkLogStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum WorkSessionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+model User {
+  id              String            @id @default(uuid())
+  role            Role              @default(WORKER)
+  name            String
+  email           String?           @unique
+  phone           String?           @unique
+  passwordHash    String
+  image           String?
+  categories      String?           // Comma-separated: e.g. "CONSTRUCTION,CLEANING"
+  contractorId    String?
+  contractor      User?             @relation("ContractorToWorker", fields: [contractorId], references: [id])
+  workers         User[]            @relation("ContractorToWorker")
+  projects        Project[]         @relation("ContractorProjects")
+  managedCategories WorkCategory[]  @relation("ContractorWorkCategories")
+  workCategories    WorkCategory[]  @relation("WorkerWorkCategories")
+  assignments     ProjectAssignment[]
+  workSessions    WorkSession[]
+  attendances     Attendance[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+  @@map("users")
+}
+
+model Project {
+  id              String            @id @default(uuid())
+  contractorId    String
+  contractor      User              @relation("ContractorProjects", fields: [contractorId], references: [id])
+  name            String
+  description     String?           @db.Text
+  logo            String?
+  categories      String?           // Comma-separated: e.g. "CONSTRUCTION,ROOFING"
+  latitude        Float?
+  longitude       Float?
+  targetHours     Float?
+  address         String?           @db.Text
+  startDate       DateTime?
+  endDate         DateTime?
+  active          Boolean           @default(true)
+  isLocationBound Boolean           @default(false)
+  workCategories  WorkCategory[]    @relation("ProjectWorkCategories")
+  assignments     ProjectAssignment[]
+  workSessions    WorkSession[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  @@map("projects")
+}
+
+model Attendance {
+  id              String            @id @default(uuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id])
+  loginTime       DateTime          @default(now())
+  logoutTime      DateTime?
+  isAutoLogout    Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  @@map("attendances")
+}
+
+model ProjectAssignment {
+  id              String            @id @default(uuid())
+  projectId       String
+  project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workerId        String
+  worker          User              @relation(fields: [workerId], references: [id])
+  assignedAt      DateTime          @default(now())
+  @@unique([projectId, workerId])
+  @@map("project_assignments")
+}
+
+model WorkSession {
+  id              String            @id @default(uuid())
+  workerId        String
+  worker          User              @relation(fields: [workerId], references: [id])
+  projectId       String
+  project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category          String?
+  workCategoryId    String?
+  workCategory      WorkCategory?     @relation(fields: [workCategoryId], references: [id])
+  hourlyRateAtTime  Float?
+  status            WorkSessionStatus @default(ACTIVE)
+  startTime         DateTime          @default(now())
+  endTime           DateTime?
+  totalMinutes      Int?
+  date              DateTime          @db.Date
+  workLogs          WorkLog[]
+  pauses            WorkSessionPause[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  @@map("work_sessions")
+}
+
+model WorkSessionPause {
+  id              String            @id @default(uuid())
+  workSessionId   String
+  workSession     WorkSession       @relation(fields: [workSessionId], references: [id], onDelete: Cascade)
+  pauseTime       DateTime          @default(now())
+  resumeTime      DateTime?
+  durationMinutes Int?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  @@map("work_session_pauses")
+}
+
+model WorkLog {
+  id                String            @id @default(uuid())
+  workSessionId     String
+  workSession       WorkSession       @relation(fields: [workSessionId], references: [id], onDelete: Cascade)
+  description       String            @db.Text
+  status            WorkLogStatus     @default(PENDING)
+  contractorComment String?           @db.Text
+  photos            WorkPhoto[]
+  createdAt         DateTime          @default(now())
+  @@map("work_logs")
+}
+
+model WorkPhoto {
+  id              String            @id @default(uuid())
+  workLogId       String
+  workLog         WorkLog           @relation(fields: [workLogId], references: [id], onDelete: Cascade)
+  filePath        String
+  mimeType        String
+  size            Int
+  createdAt       DateTime          @default(now())
+  @@map("work_photos")
+}
+
+model WorkCategory {
+  id              String            @id @default(uuid())
+  contractorId    String
+  contractor      User              @relation("ContractorWorkCategories", fields: [contractorId], references: [id])
+  name            String
+  hourlyRate      Float             @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  projects        Project[]         @relation("ProjectWorkCategories")
+  workers         User[]            @relation("WorkerWorkCategories")
+  workSessions    WorkSession[]
+
+  @@unique([contractorId, name])
+  @@map("work_categories")
+}
+

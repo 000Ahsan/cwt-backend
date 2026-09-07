@@ -35,6 +35,13 @@ export class ProjectsController {
         return [];
     }
 
+    @Get('worker-assignments')
+    @Roles(Role.WORKER)
+    @ApiOperation({ summary: 'Get projects assigned to the logged-in worker' })
+    async getWorkerAssignments(@Request() req) {
+        return this.projectsService.findAssignedProjects(req.user.userId);
+    }
+
     @Patch(':id')
     @Roles(Role.CONTRACTOR)
     @ApiOperation({ summary: 'Update an existing project' })
@@ -53,6 +60,19 @@ export class ProjectsController {
     @Roles(Role.CONTRACTOR)
     @ApiOperation({ summary: 'Assign a worker to a project' })
     async assignWorker(@Param('id') projectId: string, @Body() body: AssignWorkerDto, @Request() req) {
-        return this.projectsService.assignWorker(projectId, body.workerId, req.user.userId);
+        return this.projectsService.assignWorker(projectId, body.workerId, body.workCategoryId, body.hourlyRate, req.user.userId);
     }
+
+    @Delete(':projectId/assignments/:workerId/:workCategoryId')
+    @Roles(Role.CONTRACTOR)
+    @ApiOperation({ summary: 'Unassign a worker from a project role' })
+    async unassignWorker(
+        @Param('projectId') projectId: string,
+        @Param('workerId') workerId: string,
+        @Param('workCategoryId') workCategoryId: string,
+        @Request() req
+    ) {
+        return this.projectsService.unassignWorker(projectId, workerId, workCategoryId, req.user.userId);
+    }
+
 }

@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { FileService } from '../common/file/file.service';
 import { Prisma, Project, WorkLogStatus } from '@prisma/client';
@@ -13,7 +13,7 @@ export class ProjectsService {
     ) { }
 
     async create(contractorId: string, data: CreateProjectDto): Promise<Project> {
-        const { startDate, endDate, logo, ...rest } = data;
+        const { startDate, endDate, logo, workCategoryIds, ...rest } = data;
 
         let logoPath = logo;
         if (logo && logo.startsWith('data:image')) {
@@ -27,6 +27,9 @@ export class ProjectsService {
                 logo: logoPath,
                 startDate: startDate ? new Date(startDate) : undefined,
                 endDate: endDate ? new Date(endDate) : undefined,
+                workCategoryLinks: workCategoryIds ? {
+                    create: workCategoryIds.map(id => ({ workCategoryId: id }))
+                } : undefined,
             },
         });
     }
@@ -38,6 +41,7 @@ export class ProjectsService {
                 assignments: {
                     include: {
                         worker: true,
+                        workCategory: true,
                     },
                 },
                 workSessions: {
@@ -49,6 +53,11 @@ export class ProjectsService {
                         },
                     },
                 },
+                workCategoryLinks: {
+                    include: {
+                        workCategory: true
+                    }
+                }
             },
         });
 
@@ -62,6 +71,7 @@ export class ProjectsService {
                 assignments: {
                     include: {
                         worker: true,
+                        workCategory: true,
                     },
                 },
                 workSessions: {
@@ -73,6 +83,11 @@ export class ProjectsService {
                         },
                     },
                 },
+                workCategoryLinks: {
+                    include: {
+                        workCategory: true
+                    }
+                }
             },
         });
         if (!project) throw new NotFoundException('Project not found');
@@ -80,26 +95,43 @@ export class ProjectsService {
     }
 
     private _mapProjectWithWorkers(project: any) {
-        const { assignments, workSessions, ...projectData } = project;
+        const { assignments, workSessions, workCategoryLinks, ...projectData } = project;
 
         // Calculate actualHours (cumulative for the project)
         const actualHours = workSessions.reduce((acc, session) => acc + ((session.totalMinutes || 0) / 60), 0);
 
-        return {
-            ...projectData,
-            actualHours: Math.round(actualHours * 100) / 100,
-            workers: assignments.map(a => {
+        // Group workers by ID
+        const workerMap = new Map<string, any>();
+
+        assignments?.forEach(a => {
+            if (!workerMap.has(a.workerId)) {
                 const { passwordHash, ...workerData } = a.worker;
 
                 // Calculate projectHours for this specific worker
-                const workerSessions = workSessions.filter(s => s.workerId === workerData.id);
+                const workerSessions = workSessions.filter(s => s.workerId === a.workerId);
                 const projectHours = workerSessions.reduce((acc, session) => acc + ((session.totalMinutes || 0) / 60), 0);
 
-                return {
+                workerMap.set(a.workerId, {
                     ...workerData,
                     projectHours: Math.round(projectHours * 100) / 100,
-                };
-            }),
+                    categories: [], // Assigned categories for this project
+                });
+            }
+
+            const worker = workerMap.get(a.workerId);
+            if (a.workCategory) {
+                worker.categories.push({
+                    ...a.workCategory,
+                    hourlyRate: a.hourlyRate
+                });
+            }
+        });
+
+        return {
+            ...projectData,
+            actualHours: Math.round(actualHours * 100) / 100,
+            categories: workCategoryLinks?.map(link => link.workCategory) || [],
+            workers: Array.from(workerMap.values()),
         };
     }
 
@@ -107,7 +139,7 @@ export class ProjectsService {
         // Ensure ownership
         const project = await this.findOne(id, contractorId);
 
-        const { startDate, endDate, logo, ...rest } = data;
+        const { startDate, endDate, logo, workCategoryIds, ...rest } = data;
 
         let logoPath = logo;
         if (logo && logo.startsWith('data:image')) {
@@ -125,6 +157,10 @@ export class ProjectsService {
                 logo: logoPath,
                 startDate: startDate ? new Date(startDate) : undefined,
                 endDate: endDate ? new Date(endDate) : undefined,
+                workCategoryLinks: workCategoryIds ? {
+                    deleteMany: {},
+                    create: workCategoryIds.map(catId => ({ workCategoryId: catId }))
+                } : undefined,
             },
         });
     }
@@ -143,7 +179,7 @@ export class ProjectsService {
         });
     }
 
-    async assignWorker(projectId: string, workerId: string, contractorId: string) {
+    async assignWorker(projectId: string, workerId: string, workCategoryId: string, hourlyRate: number, contractorId: string) {
         // Verify project ownership
         await this.findOne(projectId, contractorId);
 
@@ -153,23 +189,61 @@ export class ProjectsService {
         });
         if (!worker) throw new ForbiddenException('Worker does not belong to this contractor');
 
+        // Verify category exists
+        const category = await this.prisma.workCategory.findFirst({
+            where: { id: workCategoryId, contractorId }
+        });
+        if (!category) throw new NotFoundException('Work category not found');
+
+        // Check if already assigned
+        const existing = await this.prisma.projectAssignment.findUnique({
+            where: {
+                projectId_workerId_workCategoryId: {
+                    projectId,
+                    workerId,
+                    workCategoryId
+                }
+            }
+        });
+        if (existing) throw new ConflictException('Worker is already assigned to this project in this category');
+
         return this.prisma.projectAssignment.create({
             data: {
                 projectId,
                 workerId,
+                workCategoryId,
+                hourlyRate
             },
         });
     }
+
+    async unassignWorker(projectId: string, workerId: string, workCategoryId: string, contractorId: string) {
+        // Verify project ownership
+        await this.findOne(projectId, contractorId);
+
+        return this.prisma.projectAssignment.delete({
+            where: {
+                projectId_workerId_workCategoryId: {
+                    projectId,
+                    workerId,
+                    workCategoryId
+                }
+            }
+        });
+    }
+
 
     async findAssignedProjects(workerId: string): Promise<any> {
         const assignments = await this.prisma.projectAssignment.findMany({
             where: { workerId },
             include: {
+                workCategory: true,
                 project: {
                     include: {
                         assignments: {
                             include: {
                                 worker: true,
+                                workCategory: true
                             },
                         },
                         workSessions: {
@@ -181,21 +255,43 @@ export class ProjectsService {
                                 },
                             },
                         },
+                        workCategoryLinks: {
+                            include: {
+                                workCategory: true
+                            }
+                        }
                     },
                 },
             },
         });
 
-        const projects = assignments.map(a => {
-            const mappedProject = this._mapProjectWithWorkers(a.project);
-            // Find this specific worker's entry in the mapped workers array
-            const myStats = mappedProject.workers.find(w => w.id === workerId);
-            return {
-                ...mappedProject,
-                myHours: myStats ? myStats.projectHours : 0,
-            };
-        });
+        // Group assignments by project
+        const projectMap = new Map<string, any>();
 
-        return projects;
+        for (const a of assignments) {
+            if (!projectMap.has(a.projectId)) {
+                const mappedProject = this._mapProjectWithWorkers(a.project);
+                // Find this specific worker's entry in the mapped workers array (optional, for backward compatibility)
+                const myStats = mappedProject.workers.find(w => w.id === workerId);
+                
+                projectMap.set(a.projectId, {
+                    ...mappedProject,
+                    myHours: myStats ? myStats.projectHours : 0,
+                    assignedCategories: [] // Initialize assigned categories list
+                });
+            }
+            
+            const p = projectMap.get(a.projectId);
+            p.assignedCategories.push({
+                ...a.workCategory,
+                assignmentRate: a.hourlyRate
+            });
+            
+            // Override the generic 'categories' with specifically assigned ones for the worker app
+            p.categories = p.assignedCategories;
+        }
+
+        return Array.from(projectMap.values());
     }
+
 }

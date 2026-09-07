@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsUUID, IsNumber, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class AssignWorkerDto {
@@ -6,4 +6,16 @@ export class AssignWorkerDto {
     @IsUUID()
     @IsNotEmpty()
     workerId: string;
+
+    @ApiProperty({ example: 'category-uuid-here' })
+    @IsUUID()
+    @IsNotEmpty()
+    workCategoryId: string;
+
+    @ApiProperty({ example: 25.0 })
+    @IsNumber()
+    @Min(0)
+    @IsNotEmpty()
+    hourlyRate: number;
 }
+

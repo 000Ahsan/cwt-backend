@@ -18,14 +18,14 @@ export class SessionsController {
     @Roles(Role.WORKER)
     @ApiOperation({ summary: 'Start a new work session' })
     async startSession(@Request() req, @Body() startSessionDto: StartSessionDto) {
-        return this.sessionsService.startSession(req.user.userId, startSessionDto.projectId, startSessionDto.category);
+        return this.sessionsService.startSession(req.user.userId, startSessionDto.projectId, startSessionDto.workCategoryId);
     }
 
     @Post('restart')
     @Roles(Role.WORKER)
     @ApiOperation({ summary: 'Restart (reset) current work session' })
     async restartSession(@Request() req, @Body() startSessionDto: StartSessionDto) {
-        return this.sessionsService.restartSession(req.user.userId, startSessionDto.projectId, startSessionDto.category);
+        return this.sessionsService.restartSession(req.user.userId, startSessionDto.projectId, startSessionDto.workCategoryId);
     }
 
     @Post('pause')

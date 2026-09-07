@@ -6,7 +6,7 @@ import { WorkSession, WorkLogStatus, WorkSessionStatus } from '@prisma/client';
 export class SessionsService {
     constructor(private prisma: PrismaService) { }
 
-    async startSession(workerId: string, projectId: string, category: string): Promise<WorkSession> {
+    async startSession(workerId: string, projectId: string, workCategoryId: string): Promise<WorkSession> {
         // Check if there is already an active or paused session
         const activeSession = await this.prisma.workSession.findFirst({
             where: {
@@ -23,39 +23,31 @@ export class SessionsService {
             });
         }
 
-        // Verify project assignment
+        // Verify project assignment for this specific CATEGORY
         const assignment = await this.prisma.projectAssignment.findUnique({
-            where: { projectId_workerId: { projectId, workerId } },
-        });
-        if (!assignment) throw new BadRequestException('You are not assigned to this project');
-
-        // Check for unsigned-off / rejected work logs for this project in the SAME category
-        const pendingLogs = await this.prisma.workLog.findFirst({
             where: {
-                workSession: {
-                    workerId,
+                projectId_workerId_workCategoryId: {
                     projectId,
-                    category,
-                },
-                status: WorkLogStatus.PENDING,
+                    workerId,
+                    workCategoryId
+                }
             },
         });
-
-        if (pendingLogs) {
-            throw new BadRequestException(`You have pending work logs for this project in the "${category}" category that must be signed off before starting a new session in this category.`);
-        }
+        if (!assignment) throw new BadRequestException('You are not assigned to this project with this category');
 
         return this.prisma.workSession.create({
             data: {
                 workerId,
                 projectId,
-                category,
+                workCategoryId,
+                hourlyRateAtTime: assignment.hourlyRate, // Use rate from assignment
                 status: WorkSessionStatus.ACTIVE,
                 startTime: new Date(),
                 date: new Date(),
             },
         });
     }
+
 
     async pauseSession(workerId: string): Promise<WorkSession> {
         const activeSession = await this.prisma.workSession.findFirst({
@@ -151,9 +143,9 @@ export class SessionsService {
         });
     }
 
-    async restartSession(workerId: string, projectId: string, category: string): Promise<WorkSession> {
+    async restartSession(workerId: string, projectId: string, workCategoryId: string): Promise<WorkSession> {
         // This is effectively a proxy to startSession but explicitly named for frontend clarity
-        return this.startSession(workerId, projectId, category);
+        return this.startSession(workerId, projectId, workCategoryId);
     }
 
     async getWorkHistory(workerId: string): Promise<WorkSession[]> {
@@ -161,6 +153,7 @@ export class SessionsService {
             where: { workerId },
             include: {
                 project: true,
+                workCategory: true,
                 workLogs: {
                     include: {
                         photos: true

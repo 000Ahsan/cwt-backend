@@ -41,24 +41,28 @@ export class UsersService {
         });
     }
 
-    async create(data: Prisma.UserCreateInput): Promise<User> {
-        const passwordHash = await bcrypt.hash(data.passwordHash, 10);
+    async create(data: any): Promise<User> {
+        const { workCategoryIds, passwordHash: rawPwd, ...rest } = data;
+        const passwordHash = await bcrypt.hash(rawPwd, 10);
 
-        let imagePath = data.image;
-        if (data.image && data.image.startsWith('data:image')) {
-            imagePath = await this.fileService.saveBase64Image(data.image, 'users');
+        let imagePath = rest.image;
+        if (rest.image && rest.image.startsWith('data:image')) {
+            imagePath = await this.fileService.saveBase64Image(rest.image, 'users');
         }
 
         return this.prisma.user.create({
             data: {
-                ...data,
+                ...rest,
                 passwordHash,
                 image: imagePath,
+                workCategoryLinks: workCategoryIds ? {
+                    create: workCategoryIds.map(id => ({ workCategoryId: id }))
+                } : undefined,
             },
         });
     }
 
-    async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
+    async update(id: string, data: any): Promise<any> {
         const user = await this.findOneById(id);
         if (!user) throw new BadRequestException('User not found');
 
@@ -86,13 +90,11 @@ export class UsersService {
 
         if (data.image && typeof data.image === 'string') {
             if (data.image.startsWith('data:image')) {
-                // Delete old image if it exists
                 if (user.image) {
                     await this.fileService.deleteFile(user.image);
                 }
                 updateData.image = await this.fileService.saveBase64Image(data.image, 'users');
             } else if (data.image.startsWith('/uploads/')) {
-                // Direct path from file upload
                 if (user.image && user.image !== data.image) {
                     await this.fileService.deleteFile(user.image);
                 }
@@ -100,9 +102,32 @@ export class UsersService {
             }
         }
 
+        if (data.companyLogo && typeof data.companyLogo === 'string') {
+            if (data.companyLogo.startsWith('data:image')) {
+                if (user.companyLogo) {
+                    await this.fileService.deleteFile(user.companyLogo);
+                }
+                updateData.companyLogo = await this.fileService.saveBase64Image(data.companyLogo, 'company-logos');
+            } else if (data.companyLogo.startsWith('/uploads/')) {
+                if (user.companyLogo && user.companyLogo !== data.companyLogo) {
+                    await this.fileService.deleteFile(user.companyLogo);
+                }
+                updateData.companyLogo = data.companyLogo;
+            }
+        }
+
+        // Remove workCategoryIds from updateData as it's not a direct field in the User model
+        const { workCategoryIds, ...finalUpdateData } = updateData;
+
         return this.prisma.user.update({
             where: { id },
-            data: updateData,
+            data: {
+                ...finalUpdateData,
+                workCategoryLinks: workCategoryIds ? {
+                    deleteMany: {},
+                    create: workCategoryIds.map(id => ({ workCategoryId: id }))
+                } : undefined
+            },
         });
     }
 
@@ -116,14 +141,17 @@ export class UsersService {
         if (user?.image) {
             await this.fileService.deleteFile(user.image);
         }
+        if (user?.companyLogo) {
+            await this.fileService.deleteFile(user.companyLogo);
+        }
         return this.prisma.user.update({
             where: { id },
-            data: { deletedAt: new Date(), image: null }, // Optional: nullify image on delete
+            data: { deletedAt: new Date(), image: null, companyLogo: null },
         });
     }
 
-    async findWorkersByContractor(contractorId: string): Promise<User[]> {
-        return this.prisma.user.findMany({
+    async findWorkersByContractor(contractorId: string): Promise<any[]> {
+        const workers = await this.prisma.user.findMany({
             where: {
                 contractorId,
                 role: 'WORKER',
@@ -132,10 +160,46 @@ export class UsersService {
             include: {
                 assignments: {
                     include: {
-                        project: true
+                        project: true,
+                        workCategory: true
+                    }
+                },
+                workCategoryLinks: {
+                    include: {
+                        workCategory: true
                     }
                 }
             }
         });
+
+        return workers.map(worker => this.mapWorkerCategories(worker));
+    }
+
+    mapWorkerCategories(worker: any) {
+        const { workCategoryLinks, assignments, ...rest } = worker;
+
+        // Group assignments by project
+        const projectMap = new Map<string, any>();
+        assignments?.forEach((a: any) => {
+            if (!projectMap.has(a.projectId)) {
+                projectMap.set(a.projectId, {
+                    ...a.project,
+                    categories: []
+                });
+            }
+            const project = projectMap.get(a.projectId);
+            project.categories.push({
+                ...a.workCategory,
+                assignmentId: a.id,
+                hourlyRate: a.hourlyRate,
+                assignedAt: a.assignedAt
+            });
+        });
+
+        return {
+            ...rest,
+            categories: workCategoryLinks?.map(link => link.workCategory) || [],
+            assignments: Array.from(projectMap.values())
+        };
     }
 }

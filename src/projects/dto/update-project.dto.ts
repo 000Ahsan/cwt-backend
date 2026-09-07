@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsISO8601, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsISO8601, IsBoolean, IsArray, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateProjectDto {
@@ -58,10 +58,11 @@ export class UpdateProjectDto {
     isLocationBound?: boolean;
 
     @ApiPropertyOptional({
-        example: 'CONSTRUCTION,ROOFING',
-        description: 'Comma-separated list of categories e.g. CONSTRUCTION, CLEANING, ROOFING',
+        example: ['uuid-1', 'uuid-2'],
+        description: 'Array of WorkCategory IDs',
     })
-    @IsString()
+    @IsArray()
+    @IsUUID('all', { each: true })
     @IsOptional()
-    categories?: string;
+    workCategoryIds?: string[];
 }

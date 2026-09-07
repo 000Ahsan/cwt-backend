@@ -1,0 +1,87 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script_stop: true
+          command_timeout: 25m
+          script: |
+            set -euo pipefail
+
+            echo "==> Deploy started at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            cd /opt/fieldhq
+
+            echo "==> Pulling latest main"
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+
+            echo "==> Starting MySQL container"
+            docker compose up -d mysql
+
+            echo "==> Building API image"
+            docker compose build api
+
+            echo "==> Waiting for MySQL health"
+            for i in $(seq 1 30); do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' fieldhq-mysql 2>/dev/null || echo "starting")
+              echo "MySQL health: ${STATUS} (attempt ${i}/30)"
+              if [ "${STATUS}" = "healthy" ]; then
+                break
+              fi
+              if [ "${i}" -eq 30 ]; then
+                echo "MySQL did not become healthy in time"
+                docker compose logs --tail=100 mysql
+                exit 1
+              fi
+              sleep 5
+            done
+
+            echo "==> Running Prisma migrations (migrate deploy)"
+            docker compose run --rm api npx prisma migrate deploy
+
+            echo "==> Starting/recreating API container"
+            docker compose up -d --force-recreate --no-deps api
+
+            echo "==> Pruning unused images (volumes preserved)"
+            docker image prune -f
+
+            echo "==> Container status"
+            docker compose ps
+
+            echo "==> Verifying API on loopback"
+            for i in $(seq 1 20); do
+              if curl -fsS --max-time 5 "http://127.0.0.1:3000/" >/dev/null; then
+                echo "API responded successfully"
+                curl -sS "http://127.0.0.1:3000/" || true
+                echo
+                echo "==> Deploy finished at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+                exit 0
+              fi
+              echo "Waiting for API... (attempt ${i}/20)"
+              sleep 3
+            done
+
+            echo "API did not become ready after deploy"
+            docker compose logs --tail=150 api
+            exit 1
