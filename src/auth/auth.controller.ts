@@ -6,7 +6,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagg
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { CloudinaryService } from '../common/cloudinary/cloudinary.service';
+import { FileService } from '../common/file/file.service';
+import { UsersService } from '../users/users.service';
 
 const imageFileFilter = (req: any, file: Express.Multer.File, cb: (error: Error | null, acceptFile: boolean) => void) => {
     if (!file.mimetype || !file.mimetype.startsWith('image/')) {
@@ -20,7 +21,8 @@ const imageFileFilter = (req: any, file: Express.Multer.File, cb: (error: Error 
 export class AuthController {
     constructor(
         private authService: AuthService,
-        private cloudinaryService: CloudinaryService
+        private fileService: FileService,
+        private usersService: UsersService,
     ) { }
 
     @Post('login')
@@ -67,16 +69,24 @@ export class AuthController {
         @Body() updateProfileDto: UpdateProfileDto,
         @UploadedFiles() files?: { image?: Express.Multer.File[]; companyLogo?: Express.Multer.File[] },
     ) {
+        const currentUser = await this.usersService.findOneById(req.user.userId);
+
         let imageUrl: string | undefined;
         let companyLogoUrl: string | undefined;
 
         if (files?.image?.[0]) {
-            const result = await this.cloudinaryService.uploadFile(files.image[0]);
-            imageUrl = result.secure_url;
+            if (currentUser?.image) {
+                await this.fileService.deleteFile(currentUser.image);
+            }
+            const stored = await this.fileService.saveMulterFile(files.image[0], 'users');
+            imageUrl = stored.filePath;
         }
         if (files?.companyLogo?.[0]) {
-            const result = await this.cloudinaryService.uploadFile(files.companyLogo[0]);
-            companyLogoUrl = result.secure_url;
+            if (currentUser?.companyLogo) {
+                await this.fileService.deleteFile(currentUser.companyLogo);
+            }
+            const stored = await this.fileService.saveMulterFile(files.companyLogo[0], 'company-logos');
+            companyLogoUrl = stored.filePath;
         }
 
         return this.authService.updateProfile(req.user.userId, updateProfileDto, imageUrl, companyLogoUrl);

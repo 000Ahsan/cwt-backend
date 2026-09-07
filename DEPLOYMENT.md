@@ -87,10 +87,6 @@ JWT_REFRESH_SECRET=<long-random-string>
 ALLOWED_ORIGINS=https://app.fieldhqapp.com
 
 UPLOAD_DIR=/app/uploads
-
-CLOUDINARY_CLOUD_NAME=...
-CLOUDINARY_API_KEY=...
-CLOUDINARY_API_SECRET=...
 ```
 
 Notes:
@@ -119,7 +115,7 @@ In the GitHub repo → **Settings → Secrets and variables → Actions**, creat
 | `SERVER_SSH_KEY` | Private SSH key for that user (full PEM) |
 | `SERVER_PORT` | Optional; SSH port (defaults to `22` if unset) |
 
-Do **not** store database passwords, JWT secrets, or Cloudinary keys in GitHub Actions. Those live only in `/opt/fieldhq/.env`.
+Do **not** store database passwords or JWT secrets in GitHub Actions. Those live only in `/opt/fieldhq/.env`.
 
 SSH key setup example on the VPS:
 
@@ -241,7 +237,7 @@ volumes:
 
 Files under `/opt/fieldhq/uploads` on the host survive API container rebuilds and recreations. They are **not** stored in the image (see `.dockerignore`).
 
-Most new photo uploads go to Cloudinary; the app also serves `/uploads` statically from this directory for legacy/local files.
+All uploads (profile images, company logos, project logos, work-log photos) are written under this directory and served at `/uploads/...`.
 
 ---
 

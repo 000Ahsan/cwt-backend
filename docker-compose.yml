@@ -3,40 +3,47 @@ services:
     image: mysql:8.4
     container_name: fieldhq-mysql
     restart: unless-stopped
+
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: fieldhq
       MYSQL_USER: fieldhq
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
     volumes:
       - fieldhq_mysql_data:/var/lib/mysql
+
     healthcheck:
-      # Official MySQL image helper (avoids Compose password interpolation pitfalls)
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 40s
-    # Intentionally not publishing port 3306 to the host
+
+    # Do not publish MySQL port 3306 to the host.
 
   api:
     build:
       context: .
       dockerfile: Dockerfile
+
     container_name: fieldhq-api
     restart: unless-stopped
+
     env_file:
       - .env
+
     environment:
-      # Ensure Docker network hostname is used even if a local .env still says localhost
       DATABASE_URL: mysql://fieldhq:${MYSQL_PASSWORD}@mysql:3306/fieldhq
       PORT: ${PORT:-3000}
       NODE_ENV: ${NODE_ENV:-production}
+
     ports:
-      # Bound to loopback only — Nginx on the host proxies to this
       - "127.0.0.1:3000:3000"
+
     volumes:
       - ./uploads:/app/uploads
+
     depends_on:
       mysql:
         condition: service_healthy

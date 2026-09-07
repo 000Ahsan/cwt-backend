@@ -1,15 +1,16 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { WorkLog, WorkPhoto, WorkLogStatus, BillingStatus } from '@prisma/client';
-import * as path from 'path';
-import * as fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
+import { WorkLogStatus } from '@prisma/client';
+import { StoredFile } from '../common/file/file.service';
 
 @Injectable()
 export class WorkLogsService {
     constructor(private prisma: PrismaService) { }
 
-    async createLog(workerId: string, data: { sessionId: string; description: string; photos?: any[] }): Promise<any> {
+    async createLog(
+        workerId: string,
+        data: { sessionId: string; description: string; photos?: StoredFile[] },
+    ): Promise<any> {
         // Verify session belongs to worker and is active
         const session = await this.prisma.workSession.findUnique({
             where: { id: data.sessionId },
@@ -29,9 +30,9 @@ export class WorkLogsService {
                 await this.prisma.workPhoto.create({
                     data: {
                         workLogId: workLog.id,
-                        filePath: photo.secure_url,
-                        mimeType: photo.resource_type + '/' + photo.format,
-                        size: photo.bytes,
+                        filePath: photo.filePath,
+                        mimeType: photo.mimeType,
+                        size: photo.size,
                     },
                 });
             }
@@ -47,6 +48,7 @@ export class WorkLogsService {
             ...logsWithPhotos,
             photos: logsWithPhotos.photos.map(photo => ({
                 ...photo,
+                url: photo.filePath,
             })),
         };
     }

@@ -7,7 +7,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { CloudinaryService } from '../common/cloudinary/cloudinary.service';
+import { FileService } from '../common/file/file.service';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { CreateWorkLogDto } from './dto/create-work-log.dto';
 import { SignOffWorkLogDto } from './dto/sign-off-work-log.dto';
@@ -20,7 +20,7 @@ import { UpdateWorkLogTimeDto } from './dto/update-work-log-time.dto';
 export class WorkLogsController {
     constructor(
         private workLogsService: WorkLogsService,
-        private cloudinaryService: CloudinaryService
+        private fileService: FileService,
     ) { }
 
     @Post()
@@ -30,11 +30,6 @@ export class WorkLogsController {
     @UseInterceptors(FilesInterceptor('photos', 10, {
         storage: memoryStorage(),
         fileFilter: (req, file, cb) => {
-            console.log('--- Incoming File Info (WorkLogs) ---');
-            console.log('MimeType:', file.mimetype);
-            console.log('FileName:', file.originalname);
-            console.log('---');
-            
             if (!file.mimetype || !file.mimetype.startsWith('image/')) {
                 return cb(new Error(`Only image files are allowed! Mimetype was: ${file.mimetype}`), false);
             }
@@ -43,8 +38,8 @@ export class WorkLogsController {
         limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
     }))
     async create(@Request() req, @Body() body: CreateWorkLogDto, @UploadedFiles() files: Express.Multer.File[]) {
-        const uploadedPhotos = await this.cloudinaryService.uploadFiles(files);
-        
+        const uploadedPhotos = await this.fileService.saveMulterFiles(files || [], 'work-photos');
+
         return this.workLogsService.createLog(req.user.userId, {
             sessionId: body.sessionId,
             description: body.description,

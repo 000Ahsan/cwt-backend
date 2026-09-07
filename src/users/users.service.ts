@@ -90,17 +90,29 @@ export class UsersService {
 
         if (data.image && typeof data.image === 'string') {
             if (data.image.startsWith('data:image')) {
-                // Delete old image if it exists
                 if (user.image) {
                     await this.fileService.deleteFile(user.image);
                 }
                 updateData.image = await this.fileService.saveBase64Image(data.image, 'users');
             } else if (data.image.startsWith('/uploads/')) {
-                // Direct path from file upload
                 if (user.image && user.image !== data.image) {
                     await this.fileService.deleteFile(user.image);
                 }
                 updateData.image = data.image;
+            }
+        }
+
+        if (data.companyLogo && typeof data.companyLogo === 'string') {
+            if (data.companyLogo.startsWith('data:image')) {
+                if (user.companyLogo) {
+                    await this.fileService.deleteFile(user.companyLogo);
+                }
+                updateData.companyLogo = await this.fileService.saveBase64Image(data.companyLogo, 'company-logos');
+            } else if (data.companyLogo.startsWith('/uploads/')) {
+                if (user.companyLogo && user.companyLogo !== data.companyLogo) {
+                    await this.fileService.deleteFile(user.companyLogo);
+                }
+                updateData.companyLogo = data.companyLogo;
             }
         }
 
@@ -129,9 +141,12 @@ export class UsersService {
         if (user?.image) {
             await this.fileService.deleteFile(user.image);
         }
+        if (user?.companyLogo) {
+            await this.fileService.deleteFile(user.companyLogo);
+        }
         return this.prisma.user.update({
             where: { id },
-            data: { deletedAt: new Date(), image: null }, // Optional: nullify image on delete
+            data: { deletedAt: new Date(), image: null, companyLogo: null },
         });
     }
 

@@ -1,11 +1,5 @@
 # syntax=docker/dockerfile:1
 
-# ---------------------------------------------------------------------------
-# Builder
-# ---------------------------------------------------------------------------
-# bookworm-slim (Debian) is used instead of Alpine because:
-# - Prisma binaryTargets already include debian-openssl-3.0.x (not musl/Alpine)
-# - bcrypt ships native bindings more reliably on glibc
 FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
@@ -24,9 +18,6 @@ COPY . .
 RUN npx prisma generate \
   && npx nest build
 
-# ---------------------------------------------------------------------------
-# Production
-# ---------------------------------------------------------------------------
 FROM node:22-bookworm-slim AS production
 
 WORKDIR /app
@@ -40,7 +31,6 @@ RUN apt-get update \
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/
 
-# Production deps include prisma + @prisma/client (required for migrate deploy / runtime)
 RUN npm ci --omit=dev \
   && npx prisma generate \
   && npm cache clean --force
@@ -54,5 +44,4 @@ USER node
 
 EXPOSE 3000
 
-# Nest build emits dist/src/main.js (prisma/*.ts inclusion widens TypeScript rootDir)
 CMD ["node", "dist/src/main.js"]
