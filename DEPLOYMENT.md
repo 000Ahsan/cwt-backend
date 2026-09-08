@@ -52,10 +52,10 @@ sudo chown "$USER":"$USER" /opt/fieldhq
 ```bash
 git clone https://github.com/000Ahsan/cwt-backend.git /opt/fieldhq
 cd /opt/fieldhq
-git checkout main
+git checkout master
 ```
 
-> **Note:** This repository’s default remote branch has historically been `master`. CI deploys from `main`. Create/push a `main` branch (or rename `master` → `main`) before relying on GitHub Actions.
+> **Note:** This repository’s default branch is `master`. CI deploys from `master`.
 
 ---
 
@@ -163,10 +163,10 @@ docker compose ps
 
 ## 7. How GitHub Actions deploys afterward
 
-On every push to `main`, `.github/workflows/deploy.yml`:
+On every push to `master`, `.github/workflows/deploy.yml`:
 
 1. SSHs into the VPS  
-2. `cd /opt/fieldhq` and `git pull --ff-only origin main`  
+2. `cd /opt/fieldhq` and `git pull --ff-only origin master`  
 3. `docker compose build api`  
 4. Ensures MySQL is running/healthy  
 5. `docker compose run --rm api npx prisma migrate deploy`  
@@ -254,7 +254,7 @@ git checkout <previous-commit-sha>
 docker compose build api
 docker compose run --rm api npx prisma migrate deploy   # only if that revision’s migrations are compatible
 docker compose up -d --force-recreate --no-deps api
-git checkout main   # return branch pointer when ready
+git checkout master   # return branch pointer when ready
 
 # Option B — run a previously built image tag (if you tagged builds)
 # docker images | grep fieldhq
