@@ -23,7 +23,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT || 22 }}
-          script_stop: true
           command_timeout: 25m
           script: |
             set -euo pipefail
@@ -31,10 +30,10 @@ jobs:
             echo "==> Deploy started at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             cd /opt/fieldhq
 
-            echo "==> Pulling latest main"
-            git fetch origin main
-            git checkout main
-            git pull --ff-only origin main
+            echo "==> Pulling latest master"
+            git fetch origin master
+            git checkout master
+            git pull --ff-only origin master
 
             echo "==> Starting MySQL container"
             docker compose up -d mysql
